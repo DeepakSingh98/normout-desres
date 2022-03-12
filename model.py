@@ -44,6 +44,7 @@ class NormOutModel(pl.LightningModule):
         # logging
         self.train_acc = torchmetrics.Accuracy()
         self.valid_acc = torchmetrics.Accuracy()
+        self.save_hyperparameters()
         
 
     def forward(self, x):
@@ -81,8 +82,9 @@ class NormOutModel(pl.LightningModule):
         y_hat, run_info = self(x)
         loss = F.cross_entropy(y_hat, y)
         self.train_acc(y_hat, y)
+        self.log("Train Accuracy", self.train_acc, on_step=False, on_epoch=True)
+        self.log("Train Loss", loss, on_step=True, on_epoch=True)
         self.logger.log_metrics({
-            "Train Accuracy": self.train_acc,
             "FC1 Average Percent Activated": run_info["fc1_mask"].sum(dim=0).double().mean(),
             "FC2 Average Percent Activated": run_info["fc2_mask"].sum(dim=0).double().mean(),
             },
@@ -96,7 +98,8 @@ class NormOutModel(pl.LightningModule):
         y_hat, _ = self(x)
         loss = F.cross_entropy(y_hat, y)
         self.valid_acc(y_hat, y)
-        self.logger.log_metrics({"Validation Accuracy": self.valid_acc})
+        self.log("Validation Accuracy", self.valid_acc, on_step=False, on_epoch=True)
+        self.log("Validation Loss", loss, on_step=False, on_epoch=True)
         return loss
 
     def on_train_epoch_start(self) -> None:
@@ -107,13 +110,7 @@ class NormOutModel(pl.LightningModule):
         self.logger.log_metrics({
             "FC1 Dead Neuron Prevalence": (self.fc1_neuron_tracker == 0).sum().double().item() / self.fc1_neuron_tracker.numel(),
             "FC2 Dead Neuron Prevalence": (self.fc2_neuron_tracker == 0).sum().double().item() / self.fc2_neuron_tracker.numel(),
-            "Epoch Train Accuracy": self.train_acc,
-            })
-    
-    def on_validation_end(self) -> None:
-        self.logger.log_metrics({
-            "Epoch Validation Accuracy": self.valid_acc,
-            })
+        })
 
     # dataloaders
     def train_dataloader(self):
