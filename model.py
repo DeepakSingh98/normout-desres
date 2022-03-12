@@ -63,6 +63,7 @@ class NormOutModel(pl.LightningModule):
         self.train_acc = torchmetrics.Accuracy()
         self.valid_acc = torchmetrics.Accuracy()
         self.save_hyperparameters()
+        self.run_info = dict()
 
         # adversarial
         self.adversarial_fgm = adversarial_fgm
@@ -75,7 +76,7 @@ class NormOutModel(pl.LightningModule):
         
 
     def forward(self, x):
-        run_info = dict()
+        self.run_info = dict()
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
         x = x.view(-1, 16 * 4 * 4)
@@ -85,16 +86,16 @@ class NormOutModel(pl.LightningModule):
             norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
             x_mask = torch.rand_like(x) < norm_x
             x = x * x_mask
-        run_info["fc1_mask"] = x > 0
+        self.run_info["fc1_mask"] = x > 0
         x = F.relu(self.fc2(x))
         if self.normout_fc2:
             # divide by biggest value in the activation per input
             norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
             x_mask = torch.rand_like(x) < norm_x
             x = x * x_mask
-        run_info["fc2_mask"] = x > 0
+        self.run_info["fc2_mask"] = x > 0
         x = self.fc3(x)
-        return x, run_info
+        return x
 
     def configure_optimizers(self):
         if self.optimizer == "SGDM":
@@ -106,33 +107,40 @@ class NormOutModel(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y = batch
-        y_hat, run_info = self(x)
+        y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
         self.train_acc(y_hat, y)
         self.log("Train Accuracy", self.train_acc, on_step=False, on_epoch=True)
         self.log("Train Loss", loss, on_step=True, on_epoch=True)
         self.logger.log_metrics({
-            "FC1 Average Percent Activated": run_info["fc1_mask"].sum(dim=0).double().mean(),
-            "FC2 Average Percent Activated": run_info["fc2_mask"].sum(dim=0).double().mean(),
+            "FC1 Average Percent Activated": self.run_info["fc1_mask"].sum(dim=0).double().mean(),
+            "FC2 Average Percent Activated": self.run_info["fc2_mask"].sum(dim=0).double().mean(),
             },
         )
-        self.fc1_neuron_tracker += run_info["fc1_mask"].sum(dim=0).type_as(self.fc1_neuron_tracker)
-        self.fc2_neuron_tracker += run_info["fc2_mask"].sum(dim=0).type_as(self.fc2_neuron_tracker)
+        self.fc1_neuron_tracker += self.run_info["fc1_mask"].sum(dim=0).type_as(self.fc1_neuron_tracker)
+        self.fc2_neuron_tracker += self.run_info["fc2_mask"].sum(dim=0).type_as(self.fc2_neuron_tracker)
         return loss
     
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        y_hat, _ = self(x)
+        x.requires_grad = True
+        y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
         self.valid_acc(y_hat, y)
         self.log("Validation Accuracy", self.valid_acc, on_step=False, on_epoch=True)
         self.log("Validation Loss", loss, on_step=False, on_epoch=True)
 
-        # adversarial attacks
-        if self.adversarial_fgm:
-            self.fgm_attack(x, y)
-        if self.adversarial_pgd:
-            self.pgd_attack(x, y)
+        # adversarial attack, only do after the first epoch
+        if self.current_epoch > 0:
+            if self.adversarial_fgm:
+                loss_adv, y_hat_adv = self.fgm_attack(x, y)
+                self.log(f"Adversarial FGSM Loss \n(eps={self.adv_eps}, norm=inf)", loss_adv, on_step=False, on_epoch=True)
+                self.log(f"Adversarial FGSM Accuracy \n(eps={self.adv_eps}, norm=inf)", self.valid_acc(y_hat_adv, y), on_step=False, on_epoch=True)
+
+            if self.adversarial_pgd:
+                loss_adv, y_hat_adv = self.pgd_attack(x, y)
+                self.log(f"Adversarial PGD Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.01)", loss_adv, on_step=False, on_epoch=True)
+                self.log("Adversarial PGD Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.01)", self.valid_acc(y_hat_adv, y), on_step=False, on_epoch=True)
         return loss
 
     def on_train_epoch_start(self) -> None:
@@ -166,8 +174,7 @@ class NormOutModel(pl.LightningModule):
             ) 
         y_hat_adv, _ = self(x_adv)
         loss_adv = F.cross_entropy(y_hat_adv, y)
-        self.log(f"Adversarial PGD Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.01)", loss_adv, on_step=False, on_epoch=True)
-        self.log("Adversarial PGD Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.01)", self.valid_acc(y_hat_adv, y), on_step=False, on_epoch=True)
+        return loss_adv, y_hat_adv
 
     def fgm_attack(self, x, y):
         """
@@ -177,5 +184,4 @@ class NormOutModel(pl.LightningModule):
         x_adv = fast_gradient_method(self, x, self.adv_eps, norm=np.inf)
         y_hat_adv, _ = self(x_adv)
         loss_adv = F.cross_entropy(y_hat_adv, y)
-        self.log(f"Adversarial FGSM Loss \n(eps={self.adv_eps}, norm=inf)", loss_adv, on_step=False, on_epoch=True)
-        self.log(f"Adversarial FGSM Accuracy \n(eps={self.adv_eps}, norm=inf)", self.valid_acc(y_hat_adv, y), on_step=False, on_epoch=True)
+        return loss_adv, y_hat_adv
