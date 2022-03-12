@@ -11,6 +11,7 @@ from cleverhans.torch.attacks.projected_gradient_descent import (
     projected_gradient_descent,
 )
 import numpy as np
+import wandb
 
 class NormOutModel(pl.LightningModule):
     def __init__(
@@ -18,7 +19,7 @@ class NormOutModel(pl.LightningModule):
         normout_fc1=False, 
         normout_fc2=False, 
         optimizer="SGDM", 
-        lr=0.001, 
+        lr=0.01, 
         batch_size=64, 
         num_workers=4, 
         adversarial_fgm=True, 
@@ -135,14 +136,31 @@ class NormOutModel(pl.LightningModule):
         # adversarial attack, only do after the first epoch
         if self.current_epoch > 0:
             if self.adversarial_fgm:
-                loss_adv, y_hat_adv = self.fgm_attack(x, y)
-                self.log(f"Adversarial FGSM Loss \n(eps={self.adv_eps}, norm=inf)", loss_adv, on_step=False, on_epoch=True)
-                self.log(f"Adversarial FGSM Accuracy \n(eps={self.adv_eps}, norm=inf)", self.valid_acc(y_hat_adv, y), on_step=False, on_epoch=True)
-
+                loss_adv_fgm, y_hat_adv_fgm, x_adv = self.fgm_attack(x, y)
+                self.log(f"Adversarial FGM Loss \n(eps={self.adv_eps}, norm=inf)", loss_adv_fgm, on_step=False, on_epoch=True)
+                self.log(f"Adversarial FGM Accuracy \n(eps={self.adv_eps}, norm=inf)", self.valid_acc(y_hat_adv_fgm, y), on_step=False, on_epoch=True)
+                if self.current_epoch % 50 == 1:
+                    # show two examples
+                    self.logger.log_metrics({
+                        "FGM Adversarial Examples": wandb.Image(
+                            np.concatenate([
+                                x_adv[0].cpu().detach().numpy(),
+                                x_adv[1].cpu().detach().numpy()
+                            ], axis=1)
+                        )
+                    })
             if self.adversarial_pgd:
-                loss_adv, y_hat_adv = self.pgd_attack(x, y)
-                self.log(f"Adversarial PGD Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.01)", loss_adv, on_step=False, on_epoch=True)
-                self.log("Adversarial PGD Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.01)", self.valid_acc(y_hat_adv, y), on_step=False, on_epoch=True)
+                loss_adv_pgd, y_hat_adv_pgd, x_adv = self.pgd_attack(x, y)
+                self.log(f"Adversarial PGD Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.01)", loss_adv_pgd, on_step=False, on_epoch=True)
+                self.log(f"Adversarial PGD Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.01)", self.valid_acc(y_hat_adv_pgd, y), on_step=False, on_epoch=True)
+                if self.current_epoch % 50 == 1:
+                    self.logger.log_metrics({
+                        "PGD Adversarial Example": wandb.Image(
+                            np.concatenate([
+                                x_adv[0].cpu().detach().numpy(),
+                                x_adv[1].cpu().detach().numpy()
+                            ], axis=1))
+                    })
         return loss
 
     def on_train_epoch_start(self) -> None:
@@ -176,7 +194,7 @@ class NormOutModel(pl.LightningModule):
                 )
         y_hat_adv = self(x_adv)
         loss_adv = F.cross_entropy(y_hat_adv, y)
-        return loss_adv, y_hat_adv
+        return loss_adv, y_hat_adv, x_adv
 
     def fgm_attack(self, x, y):
         """
@@ -186,4 +204,4 @@ class NormOutModel(pl.LightningModule):
         x_adv = fast_gradient_method(self, x, self.adv_eps, norm=np.inf)
         y_hat_adv = self(x_adv)
         loss_adv = F.cross_entropy(y_hat_adv, y)
-        return loss_adv, y_hat_adv
+        return loss_adv, y_hat_adv, x_adv
