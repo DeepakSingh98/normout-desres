@@ -1,0 +1,1 @@
+{"Train Loss": 0.36236043487159986, "_timestamp": 1647046768, "_runtime": 310, "_step": 309, "FC1 Average Percent Activated": 0.04337347222222222, "PercentDeadFC1": 0.0, "Train Accuracy": 0.8649333333333333, "Validation Loss": 0.3821980953216553, "Validation Accuracy": 0.8627, "_wandb": {"runtime": 311}}
