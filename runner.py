@@ -7,9 +7,9 @@ from pytorch_lightning import Trainer
 
 # accept command line arguments for epochs, batch size, number of workers, normout_fc1, normout_fc2
 parser = argparse.ArgumentParser()
-parser.add_argument("--epochs", type=int, default=10, help="number of epochs (default 100)")
-parser.add_argument("--batch-size", type=int, default=64, help="batch size (default 64)")
-parser.add_argument("--num-workers", type=int, default=4, help="number of workers used for data loading (default 4)")
+parser.add_argument("--epochs", type=int, default=100, help="number of epochs (default 100)")
+parser.add_argument("--batch-size", type=int, default=128, help="batch size (default 64)")
+parser.add_argument("--num-workers", type=int, default=2, help="number of workers used for data loading (default 4)")
 parser.add_argument("--normout-fc1", action="store_true", default=False, help="use normout for the fc1 layer (default False)")
 parser.add_argument("--normout-fc2", action="store_true", default=False, help="use normout for the fc2 layer (default False)")
 parser.add_argument("--num-gpus", type=int, default=1, help="number of gpus to use (default 1)")
