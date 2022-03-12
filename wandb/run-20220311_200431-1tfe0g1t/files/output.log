@@ -1,8 +1,0 @@
-
-EPOCH 1:
-Traceback (most recent call last):
-  File "/Users/xanderdavies/Desktop/normout/runner.py", line 103, in <module>
-    avg_loss, avg_acc = train_one_epoch(epoch_number)
-  File "/Users/xanderdavies/Desktop/normout/runner.py", line 36, in train_one_epoch
-    num_active_fc1 += run_info["fc1_mask"].sum().item()
-KeyError: 'fc1_mask'
