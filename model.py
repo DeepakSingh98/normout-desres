@@ -5,9 +5,27 @@ import pytorch_lightning as pl
 import torchmetrics
 import torchvision
 import torchvision.transforms as transforms
+from cleverhans.torch.attacks.fast_gradient_method import fast_gradient_method
+from cleverhans.torch.attacks.projected_gradient_descent import (
+    projected_gradient_descent,
+)
+import numpy as np
 
 class NormOutModel(pl.LightningModule):
-    def __init__(self, normout_fc1=False, normout_fc2=False, optimizer="SGDM", lr=0.001, batch_size=64, num_workers=4, **kwargs):
+    def __init__(
+        self, 
+        normout_fc1=False, 
+        normout_fc2=False, 
+        optimizer="SGDM", 
+        lr=0.001, 
+        batch_size=64, 
+        num_workers=4, 
+        adversarial_fgm=True, 
+        adversarial_pgd=True,
+        adv_eps=0.03,
+        pgd_steps=40,
+        **kwargs,
+    ):
         super(NormOutModel, self).__init__()
 
         # model
@@ -45,6 +63,15 @@ class NormOutModel(pl.LightningModule):
         self.train_acc = torchmetrics.Accuracy()
         self.valid_acc = torchmetrics.Accuracy()
         self.save_hyperparameters()
+
+        # adversarial
+        self.adversarial_fgm = adversarial_fgm
+        self.adversarial_pgd = adversarial_pgd
+        self.fgm_acc = torchmetrics.Accuracy()
+        self.pgd_acc = torchmetrics.Accuracy()
+        self.adv_eps = adv_eps
+        self.pgd_steps = pgd_steps
+
         
 
     def forward(self, x):
@@ -100,6 +127,12 @@ class NormOutModel(pl.LightningModule):
         self.valid_acc(y_hat, y)
         self.log("Validation Accuracy", self.valid_acc, on_step=False, on_epoch=True)
         self.log("Validation Loss", loss, on_step=False, on_epoch=True)
+
+        # adversarial attacks
+        if self.adversarial_fgm:
+            self.fgm_attack(x, y)
+        if self.adversarial_pgd:
+            self.pgd_attack(x, y)
         return loss
 
     def on_train_epoch_start(self) -> None:
@@ -121,3 +154,28 @@ class NormOutModel(pl.LightningModule):
         return torch.utils.data.DataLoader(
             self.validation_set, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers
         )
+
+    # attacks
+    def pgd_attack(self, x, y):
+        """ 
+        Performs a projected gradient descent attack on the model as described in
+        https://arxiv.org/abs/1706.06083
+        """
+        x_adv = projected_gradient_descent(
+                self, x, self.adv_eps, norm=np.inf, eps_iter=self.pgd_steps, step_size=0.01, 
+            ) 
+        y_hat_adv, _ = self(x_adv)
+        loss_adv = F.cross_entropy(y_hat_adv, y)
+        self.log(f"Adversarial PGD Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.01)", loss_adv, on_step=False, on_epoch=True)
+        self.log("Adversarial PGD Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.01)", self.valid_acc(y_hat_adv, y), on_step=False, on_epoch=True)
+
+    def fgm_attack(self, x, y):
+        """
+        Performs a fast gradient method attack on the model as described in
+        https://arxiv.org/abs/1412.6572
+        """
+        x_adv = fast_gradient_method(self, x, self.adv_eps, norm=np.inf)
+        y_hat_adv, _ = self(x_adv)
+        loss_adv = F.cross_entropy(y_hat_adv, y)
+        self.log(f"Adversarial FGSM Loss \n(eps={self.adv_eps}, norm=inf)", loss_adv, on_step=False, on_epoch=True)
+        self.log(f"Adversarial FGSM Accuracy \n(eps={self.adv_eps}, norm=inf)", self.valid_acc(y_hat_adv, y), on_step=False, on_epoch=True)
