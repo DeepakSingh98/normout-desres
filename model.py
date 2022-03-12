@@ -84,8 +84,8 @@ class NormOutModel(pl.LightningModule):
         x = F.relu(self.fc1(x))
         if self.normout_fc1:
             # divide by biggest value in the activation per input
-            norm_x = torch.tensor(x / torch.max(x, dim=1, keepdim=True)[0], requires_grad=True)
-            x_mask = torch.tensor(torch.rand_like(x) < norm_x, requires_grad=True)
+            norm_x = torch.tensor(x / torch.max(x, dim=1, keepdim=True)[0])
+            x_mask = torch.tensor(torch.rand_like(x) < norm_x)
             self.run_info["x_mask"] = x_mask
             x = x * x_mask
         self.run_info["fc1_mask"] = x > 0
