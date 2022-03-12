@@ -1,3 +1,4 @@
+from importlib_metadata import requires
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -45,13 +46,12 @@ class NormOutModel(pl.LightningModule):
         self.num_workers = num_workers
 
         # trackers
-        self.fc1_neuron_tracker = torch.zeros(self.fc1.out_features).type_as(self.fc1.weight)
-        self.fc2_neuron_tracker = torch.zeros(self.fc2.out_features).type_as(self.fc1.weight)
+        self.fc1_neuron_tracker = torch.zeros(self.fc1.out_features, requires_grad=False).type_as(self.fc1.weight)
+        self.fc2_neuron_tracker = torch.zeros(self.fc2.out_features, requires_grad=False).type_as(self.fc1.weight)
 
         # dataset
         transform = transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
-        )
+            [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
         self.training_set = torchvision.datasets.FashionMNIST(
             "./data", train=True, transform=transform, download=True
         )
@@ -83,8 +83,9 @@ class NormOutModel(pl.LightningModule):
         x = F.relu(self.fc1(x))
         if self.normout_fc1:
             # divide by biggest value in the activation per input
-            norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
-            x_mask = torch.rand_like(x) < norm_x
+            norm_x = torch.tensor(x / torch.max(x, dim=1, keepdim=True)[0], requires_grad=True)
+            x_mask = torch.tensor(torch.rand_like(x) < norm_x, requires_grad=True)
+            self.run_info["x_mask"] = x_mask
             x = x * x_mask
         self.run_info["fc1_mask"] = x > 0
         x = F.relu(self.fc2(x))
@@ -123,7 +124,8 @@ class NormOutModel(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        x.requires_grad = True
+        torch.set_grad_enabled(True)
+        x.requires_grad=True
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
         self.valid_acc(y_hat, y)
@@ -170,9 +172,8 @@ class NormOutModel(pl.LightningModule):
         https://arxiv.org/abs/1706.06083
         """
         x_adv = projected_gradient_descent(
-                self, x, self.adv_eps, norm=np.inf, eps_iter=self.pgd_steps, step_size=0.01, 
-            ) 
-        y_hat_adv, _ = self(x_adv)
+                self, x, self.adv_eps, eps_iter=self.pgd_steps, norm=np.inf) 
+        y_hat_adv = self(x_adv)
         loss_adv = F.cross_entropy(y_hat_adv, y)
         return loss_adv, y_hat_adv
 
@@ -182,6 +183,6 @@ class NormOutModel(pl.LightningModule):
         https://arxiv.org/abs/1412.6572
         """
         x_adv = fast_gradient_method(self, x, self.adv_eps, norm=np.inf)
-        y_hat_adv, _ = self(x_adv)
+        y_hat_adv = self(x_adv)
         loss_adv = F.cross_entropy(y_hat_adv, y)
         return loss_adv, y_hat_adv
