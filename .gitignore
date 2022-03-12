@@ -1,0 +1,6 @@
+**/wandb
+**/runs
+**/data
+**/__pycache__
+**/best_model.pt
+**/model.pyc
