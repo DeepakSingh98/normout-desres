@@ -4,3 +4,6 @@
 **/__pycache__
 **/best_model.pt
 **/model.pyc
+**.ckpt
+**.pth
+**.pt
