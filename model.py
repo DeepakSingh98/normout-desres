@@ -172,7 +172,8 @@ class NormOutModel(pl.LightningModule):
         https://arxiv.org/abs/1706.06083
         """
         x_adv = projected_gradient_descent(
-                self, x, self.adv_eps, eps_iter=self.pgd_steps, norm=np.inf) 
+                    self, x, self.adv_eps, 0.01, self.pgd_steps, np.inf
+                )
         y_hat_adv = self(x_adv)
         loss_adv = F.cross_entropy(y_hat_adv, y)
         return loss_adv, y_hat_adv
