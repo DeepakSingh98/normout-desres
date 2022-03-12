@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
+import torchmetrics
 import torchvision
 import torchvision.transforms as transforms
 
@@ -26,9 +27,8 @@ class NormOutModel(pl.LightningModule):
         self.num_workers = num_workers
 
         # trackers
-        self.fc1_neuron_tracker = torch.zeros(self.fc1.out_features)
-        self.fc2_neuron_tracker = torch.zeros(self.fc2.out_features)
-
+        self.fc1_neuron_tracker = torch.zeros(self.fc1.out_features).type_as(self.fc1.weight)
+        self.fc2_neuron_tracker = torch.zeros(self.fc2.out_features).type_as(self.fc1.weight)
 
         # dataset
         transform = transforms.Compose(
@@ -40,6 +40,10 @@ class NormOutModel(pl.LightningModule):
         self.validation_set = torchvision.datasets.FashionMNIST(
             "./data", train=False, transform=transform, download=True
         )
+
+        # logging
+        self.train_acc = torchmetrics.Accuracy()
+        self.valid_acc = torchmetrics.Accuracy()
         
 
     def forward(self, x):
@@ -70,28 +74,29 @@ class NormOutModel(pl.LightningModule):
         elif self.optimizer == "Adam":
             return torch.optim.Adam(self.parameters(), lr=self.lr)
         else:
-            raise NotImplementedError(f"Optimizer {self.optimizer} not implemented")
+            raise NotImplementedError("Optimizer not implemented")
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat, run_info = self(x)
         loss = F.cross_entropy(y_hat, y)
-        self.log({
-            "Train Loss": loss, 
-            "Train Accuracy": F.accuracy(y_hat, y), 
-            "FC1 Average Percent Activated": run_info["fc1_mask"].sum(dim=0).mean(),
-            "FC2 Average Percent Activated": run_info["fc2_mask"].sum(dim=0).mean()
+        self.train_acc(y_hat, y)
+        self.logger.log_metrics({
+            "Train Accuracy": self.train_acc,
+            "FC1 Average Percent Activated": run_info["fc1_mask"].sum(dim=0).double().mean(),
+            "FC2 Average Percent Activated": run_info["fc2_mask"].sum(dim=0).double().mean(),
             },
         )
-        self.fc1_neuron_tracker += run_info["fc1_mask"].sum(dim=0)
-        self.fc2_neuron_tracker += run_info["fc2_mask"].sum(dim=0)
+        self.fc1_neuron_tracker += run_info["fc1_mask"].sum(dim=0).type_as(self.fc1_neuron_tracker)
+        self.fc2_neuron_tracker += run_info["fc2_mask"].sum(dim=0).type_as(self.fc2_neuron_tracker)
         return loss
     
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat, _ = self(x)
         loss = F.cross_entropy(y_hat, y)
-        self.log({"Validation Loss": loss, "Validation Accuracy": F.accuracy(y_hat, y)})
+        self.valid_acc(y_hat, y)
+        self.logger.log_metrics({"Validation Accuracy": self.valid_acc})
         return loss
 
     def on_train_epoch_start(self) -> None:
@@ -99,8 +104,16 @@ class NormOutModel(pl.LightningModule):
         self.fc2_neuron_tracker.zero_()
     
     def on_train_epoch_end(self) -> None:
-        self.log({"FC1 Dead Neuron Prevalence": (self.fc1_neuron_tracker == 0).sum().item() / self.fc1_neuron_tracker.numel()})
-        self.log({"FC2 Dead Neuron Prevalence": (self.fc2_neuron_tracker == 0).sum().item() / self.fc2_neuron_tracker.numel()})
+        self.logger.log_metrics({
+            "FC1 Dead Neuron Prevalence": (self.fc1_neuron_tracker == 0).sum().double().item() / self.fc1_neuron_tracker.numel(),
+            "FC2 Dead Neuron Prevalence": (self.fc2_neuron_tracker == 0).sum().double().item() / self.fc2_neuron_tracker.numel(),
+            "Epoch Train Accuracy": self.train_acc,
+            })
+    
+    def on_validation_end(self) -> None:
+        self.logger.log_metrics({
+            "Epoch Validation Accuracy": self.valid_acc,
+            })
 
     # dataloaders
     def train_dataloader(self):

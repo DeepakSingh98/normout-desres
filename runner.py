@@ -28,7 +28,7 @@ if model.normout_fc2:
 
 wandb_logger = WandbLogger(
     project="normout",
-    name=(("-").join(tags) + "-" + timestamp) if len(tags) > 0 else timestamp,
+    name=(("-").join(tags) + "-" + timestamp) if len(tags) > 0 else f"baseline-{timestamp}",
     tags=tags,
 )
 
