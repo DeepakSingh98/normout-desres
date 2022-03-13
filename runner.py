@@ -5,6 +5,10 @@ from datetime import datetime
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning import Trainer
 
+import wandb
+
+wandb.init(entity="normout")
+
 # accept command line arguments for epochs, batch size, number of workers, normout_fc1, normout_fc2
 parser = argparse.ArgumentParser()
 parser.add_argument("--epochs", type=int, default=100, help="number of epochs (default 100)")
