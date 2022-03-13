@@ -294,6 +294,9 @@ class NormOutModel(pl.LightningModule):
 class NormOutTopK(NormOutModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.topk_k = kwargs.get("topk_k", 10)
+        self.fc1_top_k = kwargs.get("topk_fc1", False)
+        self.fc2_top_k = kwargs.get("topk_fc1", False)
 
     def forward(self, x):
         self.run_info = dict()
@@ -301,11 +304,21 @@ class NormOutTopK(NormOutModel):
         x = self.pool(F.relu(self.conv2(x)))
         x = x.view(-1, 16 * 4 * 4)
         x = F.relu(self.fc1(x))
-        # top 10 mask
-        x = x * torch.topk(x, 10, dim=1)[0][:, :, None]
+
+        if self.fc1_top_k:
+            _, indices = torch.topk(x, self.topk_k, dim=1)
+            top_k_mask = torch.zeros_like(x)
+            top_k_mask = top_k_mask.scatter(1, indices, 1)
+            x = x * top_k_mask 
         self.run_info["fc1_mask"] = x > 0
+
         x = F.relu(self.fc2(x))
-        x = x * torch.topk(x, 10, dim=1)[0][:, :, None]
+        if self.fc2_top_k:
+            _, indices = torch.topk(x, self.topk_k, dim=1)
+            top_k_mask = torch.zeros_like(x)
+            top_k_mask = top_k_mask.scatter(1, indices, 1)
+            x = x * top_k_mask
         self.run_info["fc2_mask"] = x > 0
+
         x = self.fc3(x)
         return x

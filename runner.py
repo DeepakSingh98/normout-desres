@@ -1,5 +1,5 @@
 import argparse
-from model import NormOutModel
+from model import NormOutModel, NormOutTopK
 
 from datetime import datetime
 from pytorch_lightning.loggers import WandbLogger
@@ -21,10 +21,20 @@ parser.add_argument("--optimizer", type=str, default="SGDM", help="optimizer (de
 parser.add_argument("--lr", type=float, default=0.001, help="learning rate (default 0.001)")
 parser.add_argument("--dset-name", type=str, default="MNIST-Fashion", help="dataset name (default MNIST-Fashion, also supports CIFAR10)")
 parser.add_argument("--normout-delay-epochs", type=int, default=0, help="normout delay epochs (default 0)")
+## topk baseline
+parser.add_argument("--topk-baseline", action="store_true", default=False, help="use topk baseline instead of normout (default False)")
+parser.add_argument("--topk-k", type=int, default=10, help="topk k (default 10)")
+parser.add_argument("--topk-fc1", action="store_true", default=False, help="use topk for the fc1 layer (default True)")
+parser.add_argument("--topk-fc2", action="store_true", default=False, help="use topk for the fc2 layer (default True)")
 args = parser.parse_args()
 
 # get model
-model = NormOutModel(**vars(args))
+if args.topk_baseline:
+    print("Using topk baseline")
+    assert args.topk_fc1 or args.topk_fc2
+    model = NormOutTopK(**vars(args))
+else:
+    model = NormOutModel(**vars(args))
 
 # initialize model name/logging
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -33,14 +43,21 @@ if model.normout_fc1:
     tags.append("normout_fc1")
 if model.normout_fc2:
     tags.append("normout_fc2")
-if model.normout_delay_epochs > 0:
+if model.normout_delay_epochs > 0 and (model.normout_fc1 or model.normout_fc2):
     tags.append("normout_delay_epochs_%d" % model.normout_delay_epochs)
+if args.topk_baseline:
+    if args.topk_fc1:
+        tags.append("topk_fc1")
+    if args.topk_fc2:
+        tags.append("topk_fc2")
+if not model.normout_fc1 and not model.normout_fc2:
+    tags.append("baseline")
 tags.append(model.dset_name)
 tags.append(model.optimizer)
 
 wandb_logger = WandbLogger(
     project="normout",
-    name=(("-").join(tags) + "-" + timestamp) if len(tags) > 0 else f"baseline-{timestamp}",
+    name=(("-").join(tags) + "-" + timestamp),
     tags=tags,
     entity="normout"
 )
