@@ -7,7 +7,7 @@ from pytorch_lightning import Trainer
 
 import wandb
 
-wandb.init(entity="normout")
+#wandb.init(entity="normout", project='normout')
 
 # accept command line arguments for epochs, batch size, number of workers, normout_fc1, normout_fc2
 parser = argparse.ArgumentParser()
@@ -37,11 +37,13 @@ if model.normout_fc1:
     tags.append("normout_fc1")
 if model.normout_fc2:
     tags.append("normout_fc2")
+tags.append(args.dset_name)
 
 wandb_logger = WandbLogger(
-    project="normout",
+    entity='normout',
+    project='normout',
     name=(("-").join(tags) + "-" + timestamp) if len(tags) > 0 else f"baseline-{timestamp}",
-    tags=tags,
+    tags=tags
 )
 
 wandb_logger.watch(model)
