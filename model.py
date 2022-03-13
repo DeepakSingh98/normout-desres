@@ -49,6 +49,7 @@ class NormOutModel(pl.LightningModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.normout_delay_epochs = normout_delay_epochs
+        self.dset_name = dset_name
 
         # trackers
         self.fc1_neuron_tracker = torch.zeros(
@@ -288,3 +289,23 @@ class NormOutModel(pl.LightningModule):
         y_hat_adv = self(x_adv)
         loss_adv = F.cross_entropy(y_hat_adv, y)
         return loss_adv, y_hat_adv, x_adv
+
+
+class NormOutTopK(NormOutModel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def forward(self, x):
+        self.run_info = dict()
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 16 * 4 * 4)
+        x = F.relu(self.fc1(x))
+        # top 10 mask
+        x = x * torch.topk(x, 10, dim=1)[0][:, :, None]
+        self.run_info["fc1_mask"] = x > 0
+        x = F.relu(self.fc2(x))
+        x = x * torch.topk(x, 10, dim=1)[0][:, :, None]
+        self.run_info["fc2_mask"] = x > 0
+        x = self.fc3(x)
+        return x
