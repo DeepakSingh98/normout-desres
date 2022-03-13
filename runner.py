@@ -19,6 +19,7 @@ parser.add_argument("--adv-eps", type=float, default=0.1, help="epsilon for fgm 
 parser.add_argument("--pgd-steps", type=int, default=40, help="pgd steps (default 40)")
 parser.add_argument("--optimizer", type=str, default="SGDM", help="optimizer (default SGDM)")
 parser.add_argument("--lr", type=float, default=0.001, help="learning rate (default 0.001)")
+parser.add_argument("--dset-name", type=str, default="MNIST-Fashion", help="dataset name (default MNIST-Fashion, also supports CIFAR10)")
 args = parser.parse_args()
 
 # get model
