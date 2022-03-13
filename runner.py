@@ -24,6 +24,7 @@ parser.add_argument("--pgd-steps", type=int, default=40, help="pgd steps (defaul
 parser.add_argument("--optimizer", type=str, default="SGDM", help="optimizer (default SGDM)")
 parser.add_argument("--lr", type=float, default=0.001, help="learning rate (default 0.001)")
 parser.add_argument("--dset-name", type=str, default="MNIST-Fashion", help="dataset name (default MNIST-Fashion, also supports CIFAR10)")
+parser.add_argument("--normout-delay-epochs", type=int, default=0, help="normout delay epochs (default 0)")
 args = parser.parse_args()
 
 # get model
@@ -48,6 +49,4 @@ wandb_logger.watch(model)
 trainer = Trainer(gpus=args.num_gpus, logger=wandb_logger, max_epochs=args.epochs)
 
 trainer.fit(model)
-
-
 

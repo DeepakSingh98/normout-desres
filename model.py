@@ -27,6 +27,7 @@ class NormOutModel(pl.LightningModule):
         adversarial_pgd=True,
         adv_eps=0.03,
         pgd_steps=40,
+        normout_delay_epochs=0,
         dset_name="MNIST-Fashion",  # 'MNIST-Fashion' or 'CIFAR10'
         **kwargs,
     ):
@@ -47,6 +48,7 @@ class NormOutModel(pl.LightningModule):
         self.lr = lr
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.normout_delay_epochs = normout_delay_epochs
 
         # trackers
         self.fc1_neuron_tracker = torch.zeros(
@@ -103,7 +105,7 @@ class NormOutModel(pl.LightningModule):
         x = self.pool(F.relu(self.conv2(x)))
         x = x.view(-1, 16 * 4 * 4)
         x = F.relu(self.fc1(x))
-        if self.normout_fc1:
+        if self.normout_fc1 and self.current_epoch > self.normout_delay_epochs:
             # divide by biggest value in the activation per input
             norm_x = torch.tensor(x / torch.max(x, dim=1, keepdim=True)[0])
             x_mask = torch.tensor(torch.rand_like(x) < norm_x)
@@ -111,7 +113,7 @@ class NormOutModel(pl.LightningModule):
             x = x * x_mask
         self.run_info["fc1_mask"] = x > 0
         x = F.relu(self.fc2(x))
-        if self.normout_fc2:
+        if self.normout_fc2 and self.current_epoch > self.normout_delay_epochs:
             # divide by biggest value in the activation per input
             norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
             x_mask = torch.rand_like(x) < norm_x
