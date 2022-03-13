@@ -49,6 +49,7 @@ class NormOutModel(pl.LightningModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.normout_delay_epochs = normout_delay_epochs
+        self.dset_name = dset_name
 
         # trackers
         self.fc1_neuron_tracker = torch.zeros(
