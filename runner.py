@@ -1,5 +1,5 @@
 import argparse
-from model import NormOutModel, NormOutTopK
+from model import *
 
 from datetime import datetime
 from pytorch_lightning.loggers import WandbLogger
@@ -26,6 +26,11 @@ parser.add_argument("--topk-baseline", action="store_true", default=False, help=
 parser.add_argument("--topk-k", type=int, default=10, help="topk k (default 10)")
 parser.add_argument("--topk-fc1", action="store_true", default=False, help="use topk for the fc1 layer (default True)")
 parser.add_argument("--topk-fc2", action="store_true", default=False, help="use topk for the fc2 layer (default True)")
+#dropout
+parser.add_argument("--dropout-baseline", action="store_true", default=False, help="use dropout baseline instead of normout (default False)")
+parser.add_argument("--dropout-p", type=float, default=0.5, help="dropout p (default 0.5)")
+parser.add_argument("--dropout-fc1", action="store_true", default=False, help="use dropout after the fc1 layer (default True)")
+parser.add_argument("--dropout-fc2", action="store_true", default=False, help="use dropout after the fc2 layer (default True)")
 args = parser.parse_args()
 
 # get model
@@ -33,6 +38,12 @@ if args.topk_baseline:
     print("Using topk baseline")
     assert args.topk_fc1 or args.topk_fc2
     model = NormOutTopK(**vars(args))
+
+if args.dropout_baseline:
+    print("Using dropout baseline")
+    assert args.dropout_fc1 or args.dropout_fc2
+    model = DropoutModel(**vars(args))
+
 else:
     model = NormOutModel(**vars(args))
 
@@ -46,10 +57,17 @@ if model.normout_fc2:
 if model.normout_delay_epochs > 0 and (model.normout_fc1 or model.normout_fc2):
     tags.append("normout_delay_epochs_%d" % model.normout_delay_epochs)
 if args.topk_baseline:
+    tags.append("k=%d" % model.topk_k)
     if args.topk_fc1:
         tags.append("topk_fc1")
     if args.topk_fc2:
         tags.append("topk_fc2")
+if args.dropout_baseline:
+    tags.append("p=%d" % model.dropout_p)
+    if args.dropout_fc1:
+        tags.append("dropout_fc1")
+    if args.dropout_fc2:
+        tags.append("dropout_fc2")
 if not model.normout_fc1 and not model.normout_fc2:
     tags.append("baseline")
 tags.append(model.dset_name)
