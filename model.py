@@ -33,8 +33,38 @@ class NormOutModel(pl.LightningModule):
     ):
         super(NormOutModel, self).__init__()
 
+        # dataset
+        self.num_channels = 1
+        if dset_name == "MNIST-Fashion":
+            transform = transforms.Compose(
+                [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
+            )
+            self.training_set = torchvision.datasets.FashionMNIST(
+                "./data", train=True, transform=transform, download=True
+            )
+            self.validation_set = torchvision.datasets.FashionMNIST(
+                "./data", train=False, transform=transform, download=True
+            )
+            self.num_channels = 1
+        elif dset_name == "CIFAR10":
+            transform = transforms.Compose(
+                [
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                ]
+            )
+            self.training_set = torchvision.datasets.CIFAR10(
+                "./data", train=True, transform=transform, download=True
+            )
+            self.validation_set = torchvision.datasets.CIFAR10(
+                "./data", train=False, transform=transform, download=True
+            )
+            self.num_channels = 3
+        else:
+            raise NotImplementedError("Dataset not implemented")
+
         # model
-        self.conv1 = nn.Conv2d(1, 6, 5)
+        self.conv1 = nn.Conv2d(self.num_channels, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
         self.fc1 = nn.Linear(16 * 4 * 4, 120)
@@ -58,33 +88,6 @@ class NormOutModel(pl.LightningModule):
         self.fc2_neuron_tracker = torch.zeros(
             self.fc2.out_features, requires_grad=False
         ).type_as(self.fc1.weight)
-
-        # dataset
-        if dset_name == "MNIST-Fashion":
-            transform = transforms.Compose(
-                [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
-            )
-            self.training_set = torchvision.datasets.FashionMNIST(
-                "./data", train=True, transform=transform, download=True
-            )
-            self.validation_set = torchvision.datasets.FashionMNIST(
-                "./data", train=False, transform=transform, download=True
-            )
-        elif dset_name == "CIFAR10":
-            transform = transforms.Compose(
-                [
-                    transforms.ToTensor(),
-                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-                ]
-            )
-            self.training_set = torchvision.datasets.CIFAR10(
-                "./data", train=True, transform=transform, download=True
-            )
-            self.validation_set = torchvision.datasets.CIFAR10(
-                "./data", train=False, transform=transform, download=True
-            )
-        else:
-            raise NotImplementedError("Dataset not implemented")
 
         # logging
         self.train_acc = torchmetrics.Accuracy()
@@ -163,6 +166,7 @@ class NormOutModel(pl.LightningModule):
         x, y = batch
         torch.set_grad_enabled(True)
         x.requires_grad = True
+        import ipdb; ipdb.set_trace()
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
         self.valid_acc(y_hat, y)
