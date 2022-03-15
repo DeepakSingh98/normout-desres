@@ -322,3 +322,25 @@ class NormOutTopK(NormOutModel):
 
         x = self.fc3(x)
         return x
+
+class DropoutModel(NormOutModel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dropout_p = kwargs.get("dropout__p", 0.5)
+        self.fc1_dropout = kwargs.get("dropout_fc1", False)
+        self.fc2_dropout = kwargs.get("droput_fc2", False)
+        self.dropout = nn.Dropout(self.dropout__p)
+
+    def forward(self, x):
+        self.run_info = dict()
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 16 * 4 * 4)
+        x = F.relu(self.fc1(x))  
+        if self.fc1_dropout:
+            x = nn.Dropout(x)
+        x = F.relu(self.fc2(x))  
+        if self.fc2_dropout:
+            x = nn.Dropout(x)
+        x = self.fc3(x)
+        return x
