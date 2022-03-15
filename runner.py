@@ -43,7 +43,7 @@ if args.dropout_baseline:
     print("Using dropout baseline")
     assert args.dropout_fc1 or args.dropout_fc2
     model = DropoutModel(**vars(args))
-    
+
 else:
     model = NormOutModel(**vars(args))
 
@@ -57,6 +57,7 @@ if model.normout_fc2:
 if model.normout_delay_epochs > 0 and (model.normout_fc1 or model.normout_fc2):
     tags.append("normout_delay_epochs_%d" % model.normout_delay_epochs)
 if args.topk_baseline:
+    tags.append("p=%d" % model.dropout_p)
     if args.topk_fc1:
         tags.append("topk_fc1")
     if args.topk_fc2:
