@@ -17,6 +17,10 @@ import wandb
 class NormOutModel(pl.LightningModule):
     def __init__(
         self,
+        exp_normout_fc1=False,
+        exp_normout_fc2=False,
+        abs_normout_fc1=False,
+        abs_normout_fc2=False,
         normout_fc1=False,
         normout_fc2=False,
         optimizer="SGDM",
@@ -72,6 +76,10 @@ class NormOutModel(pl.LightningModule):
         self.fc3 = nn.Linear(84, 10)
 
         # settings
+        self.exp_normout_fc1 = exp_normout_fc1
+        self.exp_normout_fc2 = exp_normout_fc2
+        self.abs_normout_fc1 = abs_normout_fc1
+        self.abs_normout_fc2 = abs_normout_fc2
         self.normout_fc1 = normout_fc1
         self.normout_fc2 = normout_fc2
         self.optimizer = optimizer
@@ -108,7 +116,13 @@ class NormOutModel(pl.LightningModule):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
         x = x.view(-1, 16 * 4 * 4)
-        x = F.relu(self.fc1(x))
+
+        if self.abs_normout_fc1:
+            x = abs(self.fc1(x))
+        elif self.exp_normout_fc1:
+            x = self.fc1(x) ** 2
+        else:
+            x = F.relu(self.fc1(x))
         if self.normout_fc1 and self.current_epoch >= self.normout_delay_epochs:
             # divide by biggest value in the activation per input
             norm_x = torch.tensor(x / torch.max(x, dim=1, keepdim=True)[0])
@@ -116,7 +130,13 @@ class NormOutModel(pl.LightningModule):
             self.run_info["x_mask"] = x_mask
             x = x * x_mask
         self.run_info["fc1_mask"] = x > 0
-        x = F.relu(self.fc2(x))
+
+        if self.abs_normout_fc2:
+            x = abs(self.fc2(x))
+        elif self.exp_normout_fc2:
+            x = self.fc2(x) ** 2
+        else:
+            x = F.relu(self.fc2(x))
         if self.normout_fc2 and self.current_epoch >= self.normout_delay_epochs:
             # divide by biggest value in the activation per input
             norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
@@ -166,7 +186,7 @@ class NormOutModel(pl.LightningModule):
         x, y = batch
         torch.set_grad_enabled(True)
         x.requires_grad = True
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
         self.valid_acc(y_hat, y)

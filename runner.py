@@ -10,6 +10,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--epochs", type=int, default=100, help="number of epochs (default 100)")
 parser.add_argument("--batch-size", type=int, default=128, help="batch size (default 64)")
 parser.add_argument("--num-workers", type=int, default=4, help="number of workers used for data loading (default 4)")
+parser.add_argument("--abs-normout-fc1", action="store_true", default=False, help="use abs-normout for the fc1 layer (default False)")
+parser.add_argument("--abs-normout-fc2", action="store_true", default=False, help="use abs-normout for the fc2 layer (default False)")
+parser.add_argument("--exp-normout-fc1", action="store_true", default=False, help="use abs-normout for the fc1 layer (default False)")
+parser.add_argument("--exp-normout-fc2", action="store_true", default=False, help="use abs-normout for the fc2 layer (default False)")
 parser.add_argument("--normout-fc1", action="store_true", default=False, help="use normout for the fc1 layer (default False)")
 parser.add_argument("--normout-fc2", action="store_true", default=False, help="use normout for the fc2 layer (default False)")
 parser.add_argument("--num-gpus", type=int, default=1, help="number of gpus to use (default 1)")
@@ -50,6 +54,14 @@ else:
 # initialize model name/logging
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 tags = []
+if model.exp_normout_fc1:
+    tags.append("exp_normout_fc1")
+if model.exp_normout_fc2:
+    tags.append("exp_normout_fc2")
+if model.abs_normout_fc1:
+    tags.append("abs_normout_fc1")
+if model.abs_normout_fc2:
+    tags.append("abs_normout_fc2")
 if model.normout_fc1:
     tags.append("normout_fc1")
 if model.normout_fc2:
@@ -63,7 +75,7 @@ if args.topk_baseline:
     if args.topk_fc2:
         tags.append("topk_fc2")
 if args.dropout_baseline:
-    tags.append("p=%d" % model.dropout_p)
+    #tags.append("p=%d", model.dropout_p)
     if args.dropout_fc1:
         tags.append("dropout_fc1")
     if args.dropout_fc2:
