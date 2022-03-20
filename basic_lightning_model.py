@@ -16,7 +16,8 @@ class BasicLightningModel(pl.LightningModule, ABC):
         # dataloader
         batch_size=64,
         num_workers=4,
-        dset_name="MNIST-Fashion",  # 'MNIST-Fashion' or 'CIFAR10'
+        dset_name="CIFAR10",  # 'MNIST-Fashion' or 'CIFAR10'
+        use_cifar_data_augmentation=False,
         # optimizer
         optimizer="SGDM",
         lr=0.01,
@@ -24,9 +25,10 @@ class BasicLightningModel(pl.LightningModule, ABC):
         **kwargs
         ):
 
-        super().__init__()
+        pl.LightningModule.__init__(self)
         
         self.dset_name = dset_name
+        self.use_data_augmentation = use_cifar_data_augmentation
         self.optimizer = optimizer
         self.lr = lr
         self.batch_size = batch_size
@@ -54,15 +56,32 @@ class BasicLightningModel(pl.LightningModule, ABC):
             self.num_channels = 1
             self.num_classes = 10
         elif dset_name == "CIFAR10":
+            # TODO USING DATA AUGMENTATION TO GET BASELINE
+            data_augment_transform = transforms.Compose(
+                    [
+                        transforms.RandomCrop(32, padding=4),
+                        transforms.RandomHorizontalFlip(),
+                        transforms.ToTensor(),
+                        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),                
+                    ]
+                )
+
             transform = transforms.Compose(
                 [
                     transforms.ToTensor(),
-                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),                
                 ]
-            )
-            self.training_set = torchvision.datasets.CIFAR10(
-                "./data", train=True, transform=transform, download=True
-            )
+                )
+
+            if self.use_data_augmentation:
+                self.training_set = torchvision.datasets.CIFAR10(
+                    "./data", train=True, transform=data_augment_transform, download=True
+                )
+            else:
+                self.training_set = torchvision.datasets.CIFAR10(
+                    "./data", train=True, transform=transform, download=True
+                )
+                
             self.validation_set = torchvision.datasets.CIFAR10(
                 "./data", train=False, transform=transform, download=True
             )
@@ -73,11 +92,18 @@ class BasicLightningModel(pl.LightningModule, ABC):
     
     def configure_optimizers(self):
         if self.optimizer == "SGDM":
-            return torch.optim.SGD(self.parameters(), lr=self.lr, momentum=0.9)
+            optimizer =  torch.optim.SGD(self.parameters(), lr=self.lr, momentum=0.9)
         elif self.optimizer == "Adam":
-            return torch.optim.Adam(self.parameters(), lr=self.lr)
+            optimizer =  torch.optim.Adam(self.parameters(), lr=self.lr)
         else:
             raise NotImplementedError("Optimizer not implemented")
+        
+        return optimizer
+            # "lr_scheduler": {
+                # "scheduler": torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1), # TODO note doing this
+                # "interval": "step",
+            # }
+    
 
     # dataloaders
     def train_dataloader(self):
@@ -98,7 +124,7 @@ class BasicLightningModel(pl.LightningModule, ABC):
 
     @abstractmethod
     def forward(self, x):
-        pass
+        raise NotImplementedError("Forward pass not implemented")
 
     def training_step(self, batch, batch_idx):
         x, y = batch

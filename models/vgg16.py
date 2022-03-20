@@ -6,15 +6,17 @@ import torch.nn as nn
 import torch
 
 # new models must define a forward, training_step, and validation_step method, and may define a on_train_epoch_end method.
-class VGG16NormOut(BasicLightningModel, Attacks):
+class VGG16NormOut(Attacks, BasicLightningModel):
     def __init__(
         self, 
         vgg_no_batch_norm=False, 
         dropout_style="Normal", 
+        normout_delay_epochs=0,
         **kwargs
     ):
-        super().__init__(**kwargs)
-        
+        BasicLightningModel.__init__(self, **kwargs)
+        Attacks.__init__(self, **kwargs)
+
         # dropout
         self.dropout_style = dropout_style
         if dropout_style == "None":
@@ -22,7 +24,7 @@ class VGG16NormOut(BasicLightningModel, Attacks):
         elif dropout_style == "Dropout":
             dropout = nn.Dropout(p=0.5)
         elif dropout_style == "NormOut":
-            dropout = NormOut()
+            dropout = NormOut(delay_epochs=normout_delay_epochs)
         elif dropout_style == "TopK":
             dropout = TopK(k=10)
         else:
@@ -32,8 +34,8 @@ class VGG16NormOut(BasicLightningModel, Attacks):
         else: 
             model: VGG = vgg16_bn(pretrained=False, num_classes=self.num_classes)
         
-        # for logging
-        self.save_hyperparameters()
+        # logging
+        # self.save_hyperparameters() # TODO Not working.
 
         # important bit - overriding the classifier
         self.features = model.features
@@ -54,3 +56,6 @@ class VGG16NormOut(BasicLightningModel, Attacks):
         x = torch.flatten(x, 1)
         x = self.classifier(x)
         return x
+
+    def on_validation_epoch_end(self):
+        Attacks.on_validation_epoch_end(self)

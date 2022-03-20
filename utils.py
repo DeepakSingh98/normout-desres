@@ -6,6 +6,9 @@ class NormOut(nn.Module):
     The normout layer takes the activations of the previous layer and sets neurons to zero
     with probability of their activation divided by the largest activation.
     """
+    def __init__(self, delay_epochs=0):
+        super().__init__()
+        self.delay_epochs = delay_epochs
     def forward(self, x):
         """
         Args:
@@ -22,6 +25,7 @@ class TopK(nn.Module):
     The TopK layer sets all but the K highest activation values to zero.
     """
     def __init__(self, k: int):
+        super().__init__()
         self.k = k
     
     def forward(self, x):
