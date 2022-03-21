@@ -21,23 +21,17 @@ class NormOut(nn.Module):
         """
         if self.method == "abs":
             x = abs(x)
-            norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
-            x_mask = torch.rand_like(x) < norm_x
-            x = x * x_mask
 
         elif self.method == "exp":
             x = x ** exponent
-            norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
-            x_mask = torch.rand_like(x) < norm_x
-            x = x * x_mask
         
         else:
             x = nn.ReLU(x)
-            # divide by biggest value in the activation per input
-            norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
-            x_mask = torch.rand_like(x) < norm_x
-            x = x * x_mask
-        
+
+        # divide by biggest value in the activation per input
+        norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
+        x_mask = torch.rand_like(x) < norm_x
+        x = x * x_mask
         return x
 
 class TopK(nn.Module):
