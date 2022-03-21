@@ -43,10 +43,7 @@ class TopK(nn.Module):
         self.k = k
     
     def forward(self, x):
-
-        if activation == "ReLU":
-            x = nn.ReLU(x)
-
+        x = nn.ReLU(x)
         _, indices = torch.topk(x, self.topk_k, dim=1)
         top_k_mask = torch.zeros_like(x)
         top_k_mask = top_k_mask.scatter(1, indices, 1)
