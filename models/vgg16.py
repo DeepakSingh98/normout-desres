@@ -12,6 +12,7 @@ class VGG16NormOut(Attacks, BasicLightningModel):
         vgg_no_batch_norm=False, 
         dropout_style="Normal", 
         normout_delay_epochs=0,
+        normout_method="default",
         **kwargs
     ):
         BasicLightningModel.__init__(self, **kwargs)
@@ -24,7 +25,7 @@ class VGG16NormOut(Attacks, BasicLightningModel):
         elif dropout_style == "Dropout":
             dropout = nn.Dropout(p=0.5)
         elif dropout_style == "NormOut":
-            dropout = NormOut(delay_epochs=normout_delay_epochs)
+            dropout = NormOut(delay_epochs=normout_delay_epochs, method=normout_method)
         elif dropout_style == "TopK":
             dropout = TopK(k=10)
         else:

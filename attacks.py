@@ -10,6 +10,7 @@ import wandb
 import numpy as np
 import torch.nn.functional as F
 from autoattack import AutoAttack
+import os
 
 class Attacks(ABC):
     """
@@ -35,6 +36,12 @@ class Attacks(ABC):
         self.adv_eps = adv_eps
         self.pgd_steps = pgd_steps
 
+        # make logging directory if needed
+        self.log_path = f'./autoattack_logs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
+        if not os.path.isdir(self.log_path):
+            os.makedirs(self.log_path)
+            print(f"creating {self.log_path} directory...")
+
     # attacks at end of val epoch
     def on_validation_epoch_end(self):
         if self.current_epoch % 10 == 0:
@@ -53,7 +60,7 @@ class Attacks(ABC):
             x.requires_grad = True
 
             if self.autoattack:
-                adversary = AutoAttack(self, norm='Linf',eps=8/255, version='rand', log_path=f'./autoattack_logs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}/{self.logger._name}.txt')
+                adversary = AutoAttack(self, norm='Linf',eps=8/255, version='rand', log_path=f'{self.log_path}/{self.logger._name}.txt')
                 x_adv = adversary.run_standard_evaluation(x, y)  
 
             if self.adversarial_fgm:

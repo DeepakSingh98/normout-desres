@@ -18,7 +18,7 @@ parser.add_argument("--lr", type=float, default=0.01, help="learning rate (defau
 # model settings
 parser.add_argument("--model", type=str, default="VGG16", help="model name (default VGG16)")
 parser.add_argument("--dropout-style", type=str, default="NormOut", help="dropout style (default NormOut, supports 'None', 'Dropout', 'NormOut', and 'TopK')")
-parser.add_argument("--normout-method", type=str, default=None, help="NormOut method (default None, supports abs and exp")
+parser.add_argument("--normout-method", type=str, default='default', help="NormOut method (default default, supports abs and exp")
 parser.add_argument("--exponent", type=int, default=2, help="exponent for exponential NormOut (default 2)")
 parser.add_argument("--vgg-no-batch-norm", action="store_true", default=False, help="don't use batch norm (default False)")
 # attack params
@@ -39,6 +39,8 @@ else:
 tags = [args.model, args.dropout_style, args.optimizer, args.dset_name]
 if args.use_cifar_data_augmentation:
     tags.append("DataAug")
+if args.dropout_style == "NormOut":
+    tags.append(args.normout_method)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 wandb_logger = WandbLogger(

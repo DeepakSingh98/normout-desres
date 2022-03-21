@@ -10,6 +10,7 @@ class NormOut(nn.Module):
         super().__init__()
         self.delay_epochs = delay_epochs
         self.method = method
+        print(f"Normout method is {method}!")
         
     def forward(self, x):
         """
@@ -25,8 +26,11 @@ class NormOut(nn.Module):
         elif self.method == "exp":
             x = x ** exponent
         
-        else:
+        elif self.method == "default":
             x = nn.ReLU(True)(x)
+        
+        else:
+            raise NotImplementedError("Normout method not implemented.")
 
         # divide by biggest value in the activation per input
         norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
@@ -43,7 +47,7 @@ class TopK(nn.Module):
         self.k = k
     
     def forward(self, x):
-        x = nn.ReLU(x)
+        x = nn.ReLU(True)(x)
         _, indices = torch.topk(x, self.topk_k, dim=1)
         top_k_mask = torch.zeros_like(x)
         top_k_mask = top_k_mask.scatter(1, indices, 1)
