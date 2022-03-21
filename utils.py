@@ -26,7 +26,7 @@ class NormOut(nn.Module):
             x = x ** exponent
         
         else:
-            x = nn.ReLU(x)
+            x = nn.ReLU(True)(x)
 
         # divide by biggest value in the activation per input
         norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
@@ -38,7 +38,7 @@ class TopK(nn.Module):
     """
     The TopK layer sets all but the K highest activation values to zero.
     """
-    def __init__(self, , activation="ReLU", k: int):
+    def __init__(self, k: int):
         super().__init__()
         self.k = k
     

@@ -38,8 +38,8 @@ class Attacks(ABC):
     # attacks at end of val epoch
     def on_validation_epoch_end(self):
         if self.current_epoch % 10 == 0:
-            import ipdb; ipdb.set_trace()
-            print("\nAttacking!\n\n")
+           # import ipdb; ipdb.set_trace()
+           # print("\nAttacking!\n\n")
 
             # get entire validation set
             l = [x for (x, y) in self.val_dataloader()]
