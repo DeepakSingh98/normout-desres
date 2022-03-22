@@ -56,7 +56,7 @@ class Attacks(ABC):
             x = x.to(self.device); y = y.to(self.device)
 
             # for gradient tracking of image to backprop through it
-            # torch.set_grad_enabled(True) # TODO need this?
+            torch.set_grad_enabled(True) # TODO need this?
             x.requires_grad = True
 
             if self.autoattack:
