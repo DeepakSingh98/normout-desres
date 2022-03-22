@@ -7,3 +7,4 @@
 **.ckpt
 **.pth
 **.pt
+**/autoattack_logs
