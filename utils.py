@@ -50,9 +50,8 @@ class Dropout(nn.Module):
     The Dropout layer first uses a ReLU activation then drops neurons with probability p.
     """
 
-    def __init__(self, p: int):
-        super().__init__()
-        self.p = p
+    def __init__(self, p: float):
+        super().__init__()        
         dropout = nn.Dropout(p)
     
     def forward(self, x):

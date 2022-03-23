@@ -10,7 +10,7 @@ class VGG16NormOut(Attacks, BasicLightningModel):
     def __init__(
         self, 
         vgg_no_batch_norm=False, 
-        dropout_style="Normal", 
+        dropout_style="None", 
         normout_delay_epochs=0,
         normout_method="default",
         **kwargs

@@ -20,7 +20,7 @@ parser.add_argument("--model", type=str, default="VGG16", help="model name (defa
 parser.add_argument("--dropout-style", type=str, default="NormOut", help="dropout style (default NormOut, supports 'None', 'Dropout', 'NormOut', and 'TopK')")
 parser.add_argument("--normout-method", type=str, default='default', help="NormOut method (default default, supports abs, exp")
 parser.add_argument("--k", type=int, default=10, help="k value for TopK")
-parser.add_argument("--p", type=int, default=0.5, help="p value for Dropout (probability of neuron being dropped)")
+parser.add_argument("--p", type=float, default=0.5, help="p value for Dropout (probability of neuron being dropped)")
 parser.add_argument("--exponent", type=int, default=2, help="exponent for exponential NormOut (default 2)")
 parser.add_argument("--vgg-no-batch-norm", action="store_true", default=False, help="don't use batch norm (default False)")
 # attack params
