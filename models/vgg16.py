@@ -21,7 +21,7 @@ class VGG16NormOut(Attacks, BasicLightningModel):
         # dropout
         self.dropout_style = dropout_style
         if dropout_style == "None":
-            dropout = nn.Dropout(p=0)
+            dropout = NormOut(method="None")
         elif dropout_style == "Dropout":
             dropout = nn.Dropout(p=0.5)
         elif dropout_style == "NormOut":

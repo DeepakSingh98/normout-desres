@@ -20,7 +20,13 @@ class NormOut(nn.Module):
             Moved ReLU into this function for implementation of abs_normout, which does not
             use ReLU.
         """
-        if self.method == "abs":
+
+        # Moving baseline into this function
+        if self.method == "None":
+            x = nn.ReLU(True)(x)
+            return x
+
+        elif self.method == "abs":
             x = abs(x)
 
         elif self.method == "exp":
