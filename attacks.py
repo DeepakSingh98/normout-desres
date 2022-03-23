@@ -49,10 +49,15 @@ class Attacks(ABC):
            # print("\nAttacking!\n\n")
 
             # get entire validation set
+            '''
             l = [x for (x, y) in self.val_dataloader()]
             x = torch.cat(l, 0)
             l = [y for (x, y) in self.val_dataloader()]
             y = torch.cat(l, 0)
+            x = x.to(self.device); y = y.to(self.device)
+            '''
+            batch = next(iter(self.val_dataloader()))
+            x, y = batch
             x = x.to(self.device); y = y.to(self.device)
 
             # for gradient tracking of image to backprop through it
