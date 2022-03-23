@@ -19,6 +19,8 @@ parser.add_argument("--lr", type=float, default=0.01, help="learning rate (defau
 parser.add_argument("--model", type=str, default="VGG16", help="model name (default VGG16)")
 parser.add_argument("--dropout-style", type=str, default="NormOut", help="dropout style (default NormOut, supports 'None', 'Dropout', 'NormOut', and 'TopK')")
 parser.add_argument("--normout-method", type=str, default='default', help="NormOut method (default default, supports abs, exp")
+parser.add_argument("--k", type=int, default=10, help="k value for TopK")
+parser.add_argument("--p", type=int, default=0.5, help="p value for Dropout (probability of neuron being dropped)")
 parser.add_argument("--exponent", type=int, default=2, help="exponent for exponential NormOut (default 2)")
 parser.add_argument("--vgg-no-batch-norm", action="store_true", default=False, help="don't use batch norm (default False)")
 # attack params
@@ -37,10 +39,15 @@ else:
 
 # wandb setup
 tags = [args.model, args.dropout_style, args.optimizer, args.dset_name]
+tags.append(f'pgd_steps = {args.pgd_steps}')
 if args.use_cifar_data_augmentation:
     tags.append("DataAug")
 if args.dropout_style == "NormOut":
     tags.append(args.normout_method)
+if args.dropout_style == "Dropout":
+    tags.append(f'p = {p}')
+if args.normout_method == "exp":
+    tags.append(f'exponent = {args.exponent}')
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 wandb_logger = WandbLogger(

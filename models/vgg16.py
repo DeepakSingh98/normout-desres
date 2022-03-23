@@ -1,5 +1,5 @@
 from basic_lightning_model import BasicLightningModel
-from utils import NormOut, TopK
+from utils import NormOut, TopK, Dropout
 from torchvision.models import vgg16, vgg16_bn, VGG
 from attacks import Attacks
 import torch.nn as nn
@@ -19,15 +19,14 @@ class VGG16NormOut(Attacks, BasicLightningModel):
         Attacks.__init__(self, **kwargs)
 
         # dropout
-        self.dropout_style = dropout_style
         if dropout_style == "None":
             dropout = NormOut(method="None")
         elif dropout_style == "Dropout":
-            dropout = nn.Dropout(p=0.5)
+            dropout = Dropout(p=p)
         elif dropout_style == "NormOut":
             dropout = NormOut(delay_epochs=normout_delay_epochs, method=normout_method)
         elif dropout_style == "TopK":
-            dropout = TopK(k=10)
+            dropout = TopK(k=k)
         else:
             raise ValueError("dropout_style must be 'None', 'Dropout', 'NormOut', or 'TopK'")
         if vgg_no_batch_norm:

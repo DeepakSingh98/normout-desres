@@ -10,6 +10,7 @@ class NormOut(nn.Module):
         super().__init__()
         self.delay_epochs = delay_epochs
         self.method = method
+        self.exponent = exponent
         print(f"Normout method is {method}!")
         
     def forward(self, x):
@@ -30,7 +31,7 @@ class NormOut(nn.Module):
             x = abs(x)
 
         elif self.method == "exp":
-            x = x ** exponent
+            x = x ** self.exponent
         
         elif self.method == "default":
             x = nn.ReLU(True)(x)
@@ -44,6 +45,22 @@ class NormOut(nn.Module):
         x = x * x_mask
         return x
 
+class Dropout(nn.Module):
+    """
+    The Dropout layer first uses a ReLU activation then drops neurons with probability p.
+    """
+
+    def __init__(self, p: int):
+        super().__init__()
+        self.p = p
+        dropout = nn.Dropout(p)
+    
+    def forward(self, x):
+        x = nn.ReLU(True)(x)
+        x = dropout(x)
+        return x
+
+
 class TopK(nn.Module):
     """
     The TopK layer sets all but the K highest activation values to zero.
@@ -54,7 +71,7 @@ class TopK(nn.Module):
     
     def forward(self, x):
         x = nn.ReLU(True)(x)
-        _, indices = torch.topk(x, self.topk_k, dim=1)
+        _, indices = torch.topk(x, self.k, dim=1)
         top_k_mask = torch.zeros_like(x)
         top_k_mask = top_k_mask.scatter(1, indices, 1)
         x = x * top_k_mask
