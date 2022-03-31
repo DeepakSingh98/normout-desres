@@ -56,6 +56,7 @@ class Attacks(ABC):
             y = torch.cat(l, 0)
             x = x.to(self.device); y = y.to(self.device)
             '''
+            
             batch = next(iter(self.val_dataloader()))
             x, y = batch
             x = x.to(self.device); y = y.to(self.device)
