@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+# CUSTOM LAYERS: take in z values and apply activations
+
 class NormOut(nn.Module):
     """
     The normout layer takes the activations of the previous layer and sets neurons to zero
@@ -12,6 +14,18 @@ class NormOut(nn.Module):
         self.method = method
         self.exponent = exponent
         print(f"Normout method is {method}!")
+
+        if self.method == "abs":
+            self.preprocess = abs
+
+        elif self.method == "exp":
+            self.preprocess = lambda x: x ** self.exponent
+        
+        elif self.method == "default":
+            self.preprocess = nn.ReLU(True)
+        
+        else:
+            raise NotImplementedError("Normout method not implemented.")
         
     def forward(self, x):
         """
@@ -22,22 +36,7 @@ class NormOut(nn.Module):
             use ReLU.
         """
 
-        # Moving baseline into this function
-        if self.method == "None":
-            x = nn.ReLU(True)(x)
-            return x
-
-        elif self.method == "abs":
-            x = abs(x)
-
-        elif self.method == "exp":
-            x = x ** self.exponent
-        
-        elif self.method == "default":
-            x = nn.ReLU(True)(x)
-        
-        else:
-            raise NotImplementedError("Normout method not implemented.")
+        x = self.preprocess(x)
 
         # divide by biggest value in the activation per input
         norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
@@ -52,11 +51,11 @@ class Dropout(nn.Module):
 
     def __init__(self, p: float):
         super().__init__()        
-        dropout = nn.Dropout(p)
+        self.dropout = nn.Dropout(p)
     
     def forward(self, x):
         x = nn.ReLU(True)(x)
-        x = dropout(x)
+        x = self.dropout(x)
         return x
 
 

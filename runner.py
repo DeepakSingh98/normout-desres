@@ -17,7 +17,7 @@ parser.add_argument("--optimizer", type=str, default="SGDM", help="optimizer (de
 parser.add_argument("--lr", type=float, default=0.01, help="learning rate (default 0.01)")
 # model settings
 parser.add_argument("--model", type=str, default="VGG16", help="model name (default VGG16)")
-parser.add_argument("--dropout-style", type=str, default="NormOut", help="dropout style (default NormOut, supports 'None', 'Dropout', 'NormOut', and 'TopK')")
+parser.add_argument("--custom-layer-name", type=str, default="NormOut", help="custom layer (default NormOut, supports 'None', 'Dropout', 'NormOut', and 'TopK')")
 parser.add_argument("--normout-method", type=str, default='default', help="NormOut method (default default, supports abs, exp")
 parser.add_argument("--k", type=int, default=10, help="k value for TopK")
 parser.add_argument("--p", type=float, default=0.5, help="p value for Dropout (probability of neuron being dropped)")
@@ -38,13 +38,13 @@ else:
     raise NotImplementedError("model not implemented")
 
 # wandb setup
-tags = [args.model, args.dropout_style, args.optimizer, args.dset_name]
+tags = [args.model, args.custom_layer_name, args.optimizer, args.dset_name]
 tags.append(f'pgd_steps = {args.pgd_steps}')
 if args.use_cifar_data_augmentation:
     tags.append("DataAug")
-if args.dropout_style == "NormOut":
+if args.custom_layer_name == "NormOut":
     tags.append(args.normout_method)
-if args.dropout_style == "Dropout":
+if args.custom_layer_name == "Dropout":
     tags.append(f'p = {p}')
 if args.normout_method == "exp":
     tags.append(f'exponent = {args.exponent}')

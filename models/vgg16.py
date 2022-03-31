@@ -10,7 +10,7 @@ class VGG16NormOut(Attacks, BasicLightningModel):
     def __init__(
         self, 
         vgg_no_batch_norm=False, 
-        dropout_style="None", 
+        custom_layer_name="None", 
         normout_delay_epochs=0,
         normout_method="default",
         **kwargs
@@ -18,17 +18,17 @@ class VGG16NormOut(Attacks, BasicLightningModel):
         BasicLightningModel.__init__(self, **kwargs)
         Attacks.__init__(self, **kwargs)
 
-        # dropout
-        if dropout_style == "None":
-            dropout = NormOut(method="None")
-        elif dropout_style == "Dropout":
-            dropout = Dropout(p=p)
-        elif dropout_style == "NormOut":
-            dropout = NormOut(delay_epochs=normout_delay_epochs, method=normout_method)
-        elif dropout_style == "TopK":
-            dropout = TopK(k=k)
+        # custom_layer
+        if custom_layer_name == "ReLU":
+            custom_layer = nn.ReLU(True)
+        elif custom_layer_name == "Dropout":
+            custom_layer = Dropout(p=p)
+        elif custom_layer_name == "NormOut":
+            custom_layer = NormOut(delay_epochs=normout_delay_epochs, method=normout_method)
+        elif custom_layer_name == "TopK":
+            custom_layer = TopK(k=k)
         else:
-            raise ValueError("dropout_style must be 'None', 'Dropout', 'NormOut', or 'TopK'")
+            raise ValueError("custom_layer_name must be 'None', 'Dropout', 'NormOut', or 'TopK'")
         if vgg_no_batch_norm:
             model: VGG = vgg16(pretrained=False, num_classes=self.num_classes)
         else: 
@@ -42,9 +42,9 @@ class VGG16NormOut(Attacks, BasicLightningModel):
         self.avgpool = model.avgpool
         self.classifier = nn.Sequential(
             nn.Linear(512 * 7 * 7, 4096),
-            dropout,
+            custom_layer,
             nn.Linear(4096, 4096),
-            dropout,
+            custom_layer,
             nn.Linear(4096, self.num_classes),
         )
 
