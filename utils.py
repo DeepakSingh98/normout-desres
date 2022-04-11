@@ -21,8 +21,11 @@ class NormOut(nn.Module):
         elif self.method == "exp":
             self.preprocess = lambda x: x ** self.exponent
         
-        elif self.method == "default":
+        elif self.method == "relu":
             self.preprocess = nn.ReLU(True)
+
+        elif self.method == "softmax":
+            self.preprocess = nn.Softmax()
         
         else:
             raise NotImplementedError("Normout method not implemented.")
@@ -36,15 +39,19 @@ class NormOut(nn.Module):
             use ReLU.
         """
 
-        x = self.preprocess(x)
+        if self.method == "softmax":
+            norm_x = self.preprocess(x)
 
-        # divide by biggest value in the activation per input
-        norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
+        else:
+            x_prime = self.preprocess(x)  # This would mess things up if just x = self.preprocess(x)
+            # divide by biggest value in the activation per input
+            norm_x = x_prime / torch.max(x_prime, dim=1, keepdim=True)[0]
+
         x_mask = torch.rand_like(x) < norm_x
         x = x * x_mask
         return x
 
-class Dropout(nn.Module):
+class BaselineDropout(nn.Module):
     """
     The Dropout layer first uses a ReLU activation then drops neurons with probability p.
     """

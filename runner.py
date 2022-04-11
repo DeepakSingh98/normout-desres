@@ -17,18 +17,19 @@ parser.add_argument("--optimizer", type=str, default="SGDM", help="optimizer (de
 parser.add_argument("--lr", type=float, default=0.01, help="learning rate (default 0.01)")
 # model settings
 parser.add_argument("--model", type=str, default="VGG16", help="model name (default VGG16)")
-parser.add_argument("--custom-layer-name", type=str, default="NormOut", help="custom layer (default NormOut, supports 'None', 'Dropout', 'NormOut', and 'TopK')")
-parser.add_argument("--normout-method", type=str, default='default', help="NormOut method (default default, supports abs, exp")
+parser.add_argument("--custom-layer-name", type=str, default="NormOut", help="custom layer (default NormOut, supports 'ReLU', 'BaselineDropout', 'NormOut', and 'TopK')")
+parser.add_argument("--normout-method", type=str, default='abs', help="NormOut method (default abs, supports abs, relu, exp, softmax")
 parser.add_argument("--k", type=int, default=10, help="k value for TopK")
 parser.add_argument("--p", type=float, default=0.5, help="p value for Dropout (probability of neuron being dropped)")
 parser.add_argument("--exponent", type=int, default=2, help="exponent for exponential NormOut (default 2)")
 parser.add_argument("--vgg-no-batch-norm", action="store_true", default=False, help="don't use batch norm (default False)")
+parser.add_argument("--normout-delay-epochs", type=int, default=0, help="number of epochs to delay using normout")
 # attack params
 parser.add_argument("--no-adversarial-fgm", action="store_true", default=False, help="don't use FGM (default False)")
 parser.add_argument("--no-adversarial-pgd", action="store_true", default=False, help="don't use PGD (default False)")
 parser.add_argument("--no-autoattack", action="store_true", default=False, help="don't use AutoAttack (default False)")
 parser.add_argument("--adv-eps", type=float, default=0.03, help="adversarial epsilon (default 0.03)")
-parser.add_argument("--pgd-steps", type=int, default=40, help="number of steps for PGD (default 40)")
+parser.add_argument("--pgd-steps", type=int, default=10, help="number of steps for PGD (default 10)")
 args = parser.parse_args()
 
 # get model
@@ -45,7 +46,7 @@ if args.use_cifar_data_augmentation:
 if args.custom_layer_name == "NormOut":
     tags.append(args.normout_method)
 if args.custom_layer_name == "Dropout":
-    tags.append(f'p = {p}')
+    tags.append(f'p = {args.p}')
 if args.normout_method == "exp":
     tags.append(f'exponent = {args.exponent}')
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

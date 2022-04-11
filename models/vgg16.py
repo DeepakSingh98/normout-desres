@@ -9,10 +9,12 @@ import torch
 class VGG16NormOut(Attacks, BasicLightningModel):
     def __init__(
         self, 
-        vgg_no_batch_norm=False, 
-        custom_layer_name="None", 
-        normout_delay_epochs=0,
-        normout_method="default",
+        vgg_no_batch_norm, 
+        custom_layer_name, 
+        normout_delay_epochs,
+        normout_method,
+        p,
+        k,
         **kwargs
     ):
         BasicLightningModel.__init__(self, **kwargs)
@@ -22,13 +24,13 @@ class VGG16NormOut(Attacks, BasicLightningModel):
         if custom_layer_name == "ReLU":
             custom_layer = nn.ReLU(True)
         elif custom_layer_name == "Dropout":
-            custom_layer = Dropout(p=p)
+            custom_layer = BaselineDropout(p=p)
         elif custom_layer_name == "NormOut":
             custom_layer = NormOut(delay_epochs=normout_delay_epochs, method=normout_method)
         elif custom_layer_name == "TopK":
             custom_layer = TopK(k=k)
         else:
-            raise ValueError("custom_layer_name must be 'None', 'Dropout', 'NormOut', or 'TopK'")
+            raise ValueError("custom_layer_name must be 'ReLU', 'Dropout', 'NormOut', or 'TopK'")
         if vgg_no_batch_norm:
             model: VGG = vgg16(pretrained=False, num_classes=self.num_classes)
         else: 
