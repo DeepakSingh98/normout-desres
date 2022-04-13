@@ -2,7 +2,7 @@ import argparse
 from datetime import datetime
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning import Trainer
-from models.vgg16 import VGG16NormOut
+from models.vgg16normout import VGG16NormOut
 
 # parse command line inputs
 parser = argparse.ArgumentParser()

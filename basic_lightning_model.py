@@ -112,7 +112,7 @@ class BasicLightningModel(pl.LightningModule, ABC):
                 )
 
                 self.validation_set = torchvision.datasets.CIFAR10(
-                "./data", train=False, transform=test_transform, download=True
+                "./data", train=False, transform=test_transforms, download=True)
 
             else:
                 self.training_set = torchvision.datasets.CIFAR10(

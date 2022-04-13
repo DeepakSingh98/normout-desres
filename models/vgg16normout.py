@@ -1,11 +1,9 @@
 from basic_lightning_model import BasicLightningModel
 from utils import NormOut, TopK, BaselineDropout
-from models.custom_vgg import vgg16, vgg16_bn, VGG
+from models.custom_vgg16 import VGG, get_vgg
 from attacks import Attacks
 import torch.nn as nn
 import torch
-
-from custom_vgg import get_vgg
 
 # new models must define a forward, training_step, and validation_step method, and may define a on_train_epoch_end method.
 class VGG16NormOut(Attacks, BasicLightningModel):
@@ -41,10 +39,7 @@ class VGG16NormOut(Attacks, BasicLightningModel):
         else: 
             model: VGG = vgg16_bn(layer_indices, pretrained=False, num_classes=self.num_classes)
         '''
-        if vgg_no_batch_norm:
-            model: VGG = get_vgg(custom_layer_indices, pretrained=False, num_classes=self.num_classes)
-        else: 
-            model: VGG = get_vgg(custom_layer_indices, pretrained=False, num_classes=self.num_classes, batch_norm=True)
+        model: VGG = get_vgg(custom_layer_indices, num_classes=self.num_classes, vgg_no_batch_norm=vgg_no_batch_norm)
         
         # logging
         # self.save_hyperparameters() # TODO Not working.

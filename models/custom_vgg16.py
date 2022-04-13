@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import _LRScheduler
 import torch.utils.data as data
+from utils import NormOut
 
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
@@ -71,7 +72,7 @@ def get_vgg_layers(config, custom_layer_indices, batch_norm):
 
     return nn.Sequential(*layers)
 
-def get_vgg(custom_layer_indices=custom_layer_indices, vgg_np_batch_norm=False):
+def get_vgg(custom_layer_indices, vgg_no_batch_norm=False, num_classes=10):
 
     SEED = 1234
 
@@ -84,9 +85,9 @@ def get_vgg(custom_layer_indices=custom_layer_indices, vgg_np_batch_norm=False):
     vgg16_config = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512,
                     'M', 512, 512, 512, 'M']
 
-    vgg16_layers = get_vgg_layers(vgg16_config, custom_layer_indices, batch_norm=vgg_no_batch_norm)
+    vgg16_layers = get_vgg_layers(vgg16_config, custom_layer_indices, batch_norm=not vgg_no_batch_norm)
 
-    OUTPUT_DIM = 10
+    OUTPUT_DIM = num_classes
 
     model = VGG(vgg16_layers, OUTPUT_DIM)
 
