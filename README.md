@@ -14,4 +14,3 @@ To use, request a node with `srun -n 6 --mem 20G --pty -t 10:00:00 -p gpu --gres
 - `attacks.py` is where the class Attacks uses the `on_validation_epoch_end` method to run our adversarial attacks used to evaluate robustness.
 - `models/` contains definitions of relevant models which we evaluate. Models need only define the `forward` method (along with corresponding definitions in the `__init__`), as they inherit everything else from BasicLightningModel and Attacks.
 - `runner.py` is the runner file used to train networks; for more information call `python runner.py -h`.
-

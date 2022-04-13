@@ -14,13 +14,15 @@ class BasicLightningModel(pl.LightningModule, ABC):
     def __init__(
         self,
         # dataloader
-        batch_size=64,
+        batch_size=256,
         num_workers=4,
         dset_name="CIFAR10",  # 'MNIST-Fashion' or 'CIFAR10'
         use_cifar_data_augmentation=False,
         # optimizer
         optimizer="SGDM",
         lr=0.01,
+        weight_decay = 0.0001,
+        momentum = 0.9,
         # catch other kwargs
         **kwargs
         ):
@@ -32,6 +34,8 @@ class BasicLightningModel(pl.LightningModule, ABC):
         self.optimizer = optimizer
         self.lr = lr
         self.batch_size = batch_size
+        self.weight_decay = weight_decay
+        self.momentum = momentum
         self.num_workers = num_workers
 
         # dataset
@@ -53,10 +57,38 @@ class BasicLightningModel(pl.LightningModule, ABC):
             self.validation_set = torchvision.datasets.FashionMNIST(
                 "./data", train=False, transform=transform, download=True
             )
+            
             self.num_channels = 1
             self.num_classes = 10
+
         elif dset_name == "CIFAR10":
             # TODO USING DATA AUGMENTATION TO GET BASELINE
+
+            # My version of CIFAR10 data augmentation
+            pretrained_size = 224
+            pretrained_means = [0.485, 0.456, 0.406]
+            pretrained_stds = [0.229, 0.224, 0.225]
+
+            train_transforms = transforms.Compose([
+                                    transforms.Resize(pretrained_size),
+                                    transforms.RandomRotation(5),
+                                    transforms.RandomHorizontalFlip(0.5),
+                                    transforms.RandomCrop(pretrained_size, padding=10),
+                                    transforms.ToTensor(),
+                                    transforms.Normalize(mean=pretrained_means,
+                                                            std=pretrained_stds)
+                                ])
+
+            test_transforms = transforms.Compose([
+                                    transforms.Resize(pretrained_size),
+                                    transforms.ToTensor(),
+                                    transforms.Normalize(mean=pretrained_means,
+                                                            std=pretrained_stds)
+                                ])
+
+
+
+            '''
             data_augment_transform = transforms.Compose(
                     [
                         transforms.RandomCrop(32, padding=4),
@@ -65,6 +97,7 @@ class BasicLightningModel(pl.LightningModule, ABC):
                         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),                
                     ]
                 )
+            '''
 
             transform = transforms.Compose(
                 [
@@ -75,16 +108,21 @@ class BasicLightningModel(pl.LightningModule, ABC):
 
             if self.use_data_augmentation:
                 self.training_set = torchvision.datasets.CIFAR10(
-                    "./data", train=True, transform=data_augment_transform, download=True
+                    "./data", train=True, transform=train_transforms, download=True
                 )
+
+                self.validation_set = torchvision.datasets.CIFAR10(
+                "./data", train=False, transform=test_transform, download=True
+
             else:
                 self.training_set = torchvision.datasets.CIFAR10(
                     "./data", train=True, transform=transform, download=True
                 )
                 
-            self.validation_set = torchvision.datasets.CIFAR10(
-                "./data", train=False, transform=transform, download=True
-            )
+                self.validation_set = torchvision.datasets.CIFAR10(
+                    "./data", train=False, transform=transform, download=True
+                )
+                
             self.num_channels = 3
             self.num_classes = 10
         else:
@@ -92,17 +130,18 @@ class BasicLightningModel(pl.LightningModule, ABC):
     
     def configure_optimizers(self):
         if self.optimizer == "SGDM":
-            optimizer =  torch.optim.SGD(self.parameters(), lr=self.lr, momentum=0.9)
+            optimizer =  torch.optim.SGD(self.parameters(), lr=self.lr, momentum=self.momentum, weight_decay=self.weight_decay)
         elif self.optimizer == "Adam":
             optimizer =  torch.optim.Adam(self.parameters(), lr=self.lr)
         else:
             raise NotImplementedError("Optimizer not implemented")
         
-        return optimizer
-            # "lr_scheduler": {
-                # "scheduler": torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1), # TODO note doing this
-                # "interval": "step",
-            # }
+        return {"optimizer": optimizer,
+                "lr_scheduler": {
+                "scheduler": torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1), # TODO note doing this
+                "interval": "step",
+                }
+        }
     
 
     # dataloaders

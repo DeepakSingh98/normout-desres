@@ -1,9 +1,11 @@
 from basic_lightning_model import BasicLightningModel
-from utils import NormOut, TopK, Dropout
-from torchvision.models import vgg16, vgg16_bn, VGG
+from utils import NormOut, TopK, BaselineDropout
+from custom_vgg import vgg16, vgg16_bn, VGG
 from attacks import Attacks
 import torch.nn as nn
 import torch
+
+from custom_vgg import get_vgg
 
 # new models must define a forward, training_step, and validation_step method, and may define a on_train_epoch_end method.
 class VGG16NormOut(Attacks, BasicLightningModel):
@@ -15,6 +17,7 @@ class VGG16NormOut(Attacks, BasicLightningModel):
         normout_method,
         p,
         k,
+        custom_layer_indices,
         **kwargs
     ):
         BasicLightningModel.__init__(self, **kwargs)
@@ -23,18 +26,25 @@ class VGG16NormOut(Attacks, BasicLightningModel):
         # custom_layer
         if custom_layer_name == "ReLU":
             custom_layer = nn.ReLU(True)
-        elif custom_layer_name == "Dropout":
+        elif custom_layer_name == "BaselineDropout":
             custom_layer = BaselineDropout(p=p)
         elif custom_layer_name == "NormOut":
             custom_layer = NormOut(delay_epochs=normout_delay_epochs, method=normout_method)
         elif custom_layer_name == "TopK":
             custom_layer = TopK(k=k)
         else:
-            raise ValueError("custom_layer_name must be 'ReLU', 'Dropout', 'NormOut', or 'TopK'")
+            raise ValueError("custom_layer_name must be 'ReLU', 'BaselineDropout', 'NormOut', or 'TopK'")
+        
+        '''
         if vgg_no_batch_norm:
             model: VGG = vgg16(pretrained=False, num_classes=self.num_classes)
         else: 
-            model: VGG = vgg16_bn(pretrained=False, num_classes=self.num_classes)
+            model: VGG = vgg16_bn(layer_indices, pretrained=False, num_classes=self.num_classes)
+        '''
+        if vgg_no_batch_norm:
+            model: VGG = get_vgg(custom_layer_indices, pretrained=False, num_classes=self.num_classes)
+        else: 
+            model: VGG = get_vgg(custom_layer_indices, pretrained=False, num_classes=self.num_classes, batch_norm=True)
         
         # logging
         # self.save_hyperparameters() # TODO Not working.

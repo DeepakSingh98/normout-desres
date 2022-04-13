@@ -8,25 +8,25 @@ class NormOut(nn.Module):
     The normout layer takes the activations of the previous layer and sets neurons to zero
     with probability of their activation divided by the largest activation.
     """
-    def __init__(self, method="default", exponent=2, delay_epochs=0):
+    def __init__(self, method="abs", delay_epochs=0, exponent=2):
         super().__init__()
         self.delay_epochs = delay_epochs
         self.method = method
         self.exponent = exponent
         print(f"Normout method is {method}!")
 
-        if self.method == "abs":
+        if self.method == "Abs" or self.method == "Overwrite":
             self.preprocess = abs
 
-        elif self.method == "exp":
+        elif self.method == "Exp":
             self.preprocess = lambda x: x ** self.exponent
         
-        elif self.method == "relu":
+        elif self.method == "ReLU":
             self.preprocess = nn.ReLU(True)
 
-        elif self.method == "softmax":
+        elif self.method == "Softmax":
             self.preprocess = nn.Softmax()
-        
+    
         else:
             raise NotImplementedError("Normout method not implemented.")
         
@@ -39,8 +39,12 @@ class NormOut(nn.Module):
             use ReLU.
         """
 
-        if self.method == "softmax":
+        if self.method == "Softmax":
             norm_x = self.preprocess(x)
+        
+        elif self.method == "Overwrite":
+            x = self.preprocess(x)
+            norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
 
         else:
             x_prime = self.preprocess(x)  # This would mess things up if just x = self.preprocess(x)

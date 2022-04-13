@@ -55,11 +55,16 @@ class Attacks(ABC):
             l = [y for (x, y) in self.val_dataloader()]
             y = torch.cat(l, 0)
             x = x.to(self.device); y = y.to(self.device)
+
+            import ipdb; ipdb.set_trace()
             '''
-            
-            batch = next(iter(self.val_dataloader()))
-            x, y = batch
-            x = x.to(self.device); y = y.to(self.device)
+
+            xs = []; ys = []
+            for i in range(3):
+                batch = next(iter(self.val_dataloader()))
+                x, y = batch
+                xs.append(x.to(self.device)); ys.append(y.to(self.device))
+            x = torch.cat(xs, 0); y = torch.cat(ys, 0)
 
             # for gradient tracking of image to backprop through it
             torch.set_grad_enabled(True) # TODO need this?
@@ -68,6 +73,7 @@ class Attacks(ABC):
             if self.autoattack:
                 adversary = AutoAttack(self, norm='Linf',eps=8/255, version='rand', log_path=f'{self.log_path}/{self.logger._name}.txt')
                 x_adv = adversary.run_standard_evaluation(x, y)  
+                wandb.save(f'{self.log_path}/{self.logger._name}.txt')
 
             if self.adversarial_fgm:
                 loss_adv_fgm, y_hat_adv_fgm, x_adv = self.fgm_attack(x, y)
