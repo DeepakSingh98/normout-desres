@@ -1,6 +1,6 @@
 from basic_lightning_model import BasicLightningModel
 from utils import NormOut, TopK, BaselineDropout
-from custom_vgg import vgg16, vgg16_bn, VGG
+from models.custom_vgg import vgg16, vgg16_bn, VGG
 from attacks import Attacks
 import torch.nn as nn
 import torch
