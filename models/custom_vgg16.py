@@ -46,21 +46,23 @@ class VGG(nn.Module):
         x = self.classifier(h)
         return x, h
     
-def get_vgg_layers(config, custom_layer_indices, batch_norm):
+def get_vgg_layers(config, custom_layer_indices, custom_layer_name, batch_norm):
 
     layers = []
     in_channels = 3
 
     # Add in NormOut layer indices
     for i in custom_layer_indices:
-        config.insert(i, "N")
+        config.insert(i, "C")
 
     for c in config:
         if c == 'M':
             layers += [nn.MaxPool2d(kernel_size=2)]
         
-        elif c == 'N':
-            layers += [NormOut(method="Abs", delay_epochs=0)]
+        elif c == 'C':
+
+            if custom_layer_name == "NormOut":
+                layers += [NormOut(method="Abs", delay_epochs=0)]
 
         else:
             conv2d = nn.Conv2d(in_channels, c, kernel_size=3, padding=1)
@@ -72,7 +74,7 @@ def get_vgg_layers(config, custom_layer_indices, batch_norm):
 
     return nn.Sequential(*layers)
 
-def get_vgg(custom_layer_indices, vgg_no_batch_norm=False, num_classes=10):
+def get_vgg(custom_layer_indices, custom_layer_name, num_classes=10, vgg_no_batch_norm=False):
 
     SEED = 1234
 
@@ -85,12 +87,10 @@ def get_vgg(custom_layer_indices, vgg_no_batch_norm=False, num_classes=10):
     vgg16_config = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512,
                     'M', 512, 512, 512, 'M']
 
-    vgg16_layers = get_vgg_layers(vgg16_config, custom_layer_indices, batch_norm=not vgg_no_batch_norm)
+    vgg16_layers = get_vgg_layers(vgg16_config, custom_layer_indices, custom_layer_name, batch_norm=not vgg_no_batch_norm)
 
     OUTPUT_DIM = num_classes
 
     model = VGG(vgg16_layers, OUTPUT_DIM)
-
-    print(model)
 
     return model

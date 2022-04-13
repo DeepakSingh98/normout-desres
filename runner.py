@@ -59,7 +59,7 @@ wandb_logger = WandbLogger(
     name=(("-").join(tags) + "-" + timestamp),
     tags=tags,
     entity="normout",
-    config=args,
+   # config=args,
 )
 wandb_logger.watch(model)
 

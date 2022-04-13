@@ -39,7 +39,7 @@ class VGG16NormOut(Attacks, BasicLightningModel):
         else: 
             model: VGG = vgg16_bn(layer_indices, pretrained=False, num_classes=self.num_classes)
         '''
-        model: VGG = get_vgg(custom_layer_indices, num_classes=self.num_classes, vgg_no_batch_norm=vgg_no_batch_norm)
+        model: VGG = get_vgg(custom_layer_indices, custom_layer_name, num_classes=self.num_classes, vgg_no_batch_norm=vgg_no_batch_norm)
         
         # logging
         # self.save_hyperparameters() # TODO Not working.
@@ -54,6 +54,10 @@ class VGG16NormOut(Attacks, BasicLightningModel):
             custom_layer,
             nn.Linear(4096, self.num_classes),
         )
+
+        print(self.features)
+        print(self.avgpool)
+        print(self.classifier)
 
     def forward(self, x):
         x = self.features(x)
