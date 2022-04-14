@@ -3,7 +3,7 @@
 
 ## Usage
 
-To use, request a node with `srun -n 6 --mem 20G --pty -t 10:00:00 -p gpu --gres=gpu:1 bash`, activate your relevant environment (Xander: `source activate sdm_env`, Deepak: `conda activate env_pytorch`), then call `module load gcc/9.2.0`. Run with `python runner.py`.  Use `python runner.py -h` for command line arguments. 
+To use, request a node with `srun -n 6 --mem 40G --pty -t 10:00:00 -p gpu --gres=gpu:1 bash`, activate your relevant environment (Xander: `source activate sdm_env`, Deepak: `conda activate env_pytorch`), then call `module load gcc/9.2.0`. Run with `python runner.py`.  Use `python runner.py -h` for command line arguments. 
 
 ### Example Usage
 - To run a baseline VGG16: `python runner.py`

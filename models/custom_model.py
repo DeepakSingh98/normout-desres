@@ -44,12 +44,13 @@ class Custom_Model(Attacks, BasicLightningModel):
             raise NotImplementedError("model type not implemented")
 
         # Model surgery
-        print("Layer removals:")
-        for i in reversed(remove_layers): # Reversed to stop indices getting messed up
-            print(f"{layers[i]} removed from index {i}")
-            layers.pop(i)
+        if remove_layers is not None:
+            print("Layer removals:")
+            for i in reversed(remove_layers): # Reversed to stop indices getting messed up
+                print(f"{layers[i]} removed from index {i}")
+                layers.pop(i)
 
-        if custom_layer is not None:
+        if custom_layer is not None and insert_layers is not None:
             print("Layer insertions:")
             for i in insert_layers:
                 print(f"{custom_layer_name} inserted at index {i}")
@@ -60,7 +61,10 @@ class Custom_Model(Attacks, BasicLightningModel):
         del layers
 
         print(f"Model is {model_name}!")
-        print(f"{custom_layer_name} layers in use at indices {insert_layers}")
+
+        if custom_layer is not None:
+            print(f"{custom_layer_name} layers in use at indices {insert_layers}")
+            
         print(self.model)
 
     def forward(self, x):
