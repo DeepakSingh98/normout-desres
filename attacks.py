@@ -57,7 +57,7 @@ class Attacks(ABC):
             x = x.to(self.device); y = y.to(self.device)
 
             import ipdb; ipdb.set_trace()
-            '''
+            
 
             xs = []; ys = []
             for i in range(3):
@@ -65,6 +65,13 @@ class Attacks(ABC):
                 x, y = batch
                 xs.append(x.to(self.device)); ys.append(y.to(self.device))
             x = torch.cat(xs, 0); y = torch.cat(ys, 0)
+            del xs
+            del ys
+            '''
+
+            batch = next(iter(self.val_dataloader()))
+            x, y = batch
+            x = x.to(self.device); y = y.to(self.device)
 
             # for gradient tracking of image to backprop through it
             torch.set_grad_enabled(True) # TODO need this?

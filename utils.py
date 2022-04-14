@@ -31,13 +31,6 @@ class NormOut(nn.Module):
             raise NotImplementedError("Normout method not implemented.")
         
     def forward(self, x):
-        """
-        Args:
-            input: The dot product of the weights of the previous layer and that layer's 
-            input.
-            Moved ReLU into this function for implementation of abs_normout, which does not
-            use ReLU.
-        """
 
         if self.method == "Softmax":
             norm_x = self.preprocess(x)
@@ -47,26 +40,11 @@ class NormOut(nn.Module):
             norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
 
         else:
-            x_prime = self.preprocess(x)  # This would mess things up if just x = self.preprocess(x)
-            # divide by biggest value in the activation per input
+            x_prime = self.preprocess(x)
             norm_x = x_prime / torch.max(x_prime, dim=1, keepdim=True)[0]
 
         x_mask = torch.rand_like(x) < norm_x
         x = x * x_mask
-        return x
-
-class BaselineDropout(nn.Module):
-    """
-    The Dropout layer first uses a ReLU activation then drops neurons with probability p.
-    """
-
-    def __init__(self, p: float):
-        super().__init__()        
-        self.dropout = nn.Dropout(p)
-    
-    def forward(self, x):
-        x = nn.ReLU(True)(x)
-        x = self.dropout(x)
         return x
 
 

@@ -3,7 +3,12 @@
 
 ## Usage
 
-To use, request a node with `srun -n 6 --mem 50G --pty -t 10:00:00 -p gpu --gres=gpu:1 bash`, call `module load gcc/9.2.0`, then run with `python runner.py`.  Use `python runner.py -h` for command line arguments. In Xander's case, also call `source activate sdm_env` prior to run command to activate correct conda environment.
+To use, request a node with `srun -n 6 --mem 20G --pty -t 10:00:00 -p gpu --gres=gpu:1 bash`, activate your relevant environment (Xander: 'source activate sdm_env', Deepak: 'conda activate env_pytorch'), then call `module load gcc/9.2.0`. Run with `python runner.py`.  Use `python runner.py -h` for command line arguments. 
+
+### Example Usage
+- To run a baseline VGG16: 'python runner.py'
+- To run VGG16 with Abs NormOut layers replacing both layers 47 and 48, as well as 50 and 51 (both of which are (ReLU, Dropout) pairs): 'python runner.py --custom-layer-name "NormOut" --remove-layers 47 48 50 51 --insert-layers 47 50'
+
 
 *Note, AutoAttack should be installed via `pip install git+https://github.com/fra31/auto-attack`.*
 
