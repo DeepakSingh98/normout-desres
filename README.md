@@ -7,7 +7,7 @@ To use, request a node with `srun -n 6 --mem 20G --pty -t 10:00:00 -p gpu --gres
 
 ### Example Usage
 - To run a baseline VGG16: `python runner.py`
-- To run VGG16 with Abs NormOut layers replacing both layers 47 and 48, as well as 50 and 51 (both of which are (ReLU, Dropout) pairs): `python runner.py --custom-layer-name "NormOut" --remove-layers 47 48 50 51 --insert-layers 47 50`
+- To run VGG16 with Abs NormOut layers replacing both layers 47 and 48, as well as 50 and 51 (both of which are (ReLU, Dropout) pairs): `python runner.py --custom-layer-name "NormOut" --remove-layers 47 48 50 51 --insert-layers 47 49`
 
 
 *Note, AutoAttack should be installed via `pip install git+https://github.com/fra31/auto-attack`.*
