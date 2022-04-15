@@ -18,6 +18,7 @@ parser.add_argument("--lr", type=float, default=0.01, help="learning rate (defau
 parser.add_argument("--use-scheduler", default=False, action="store_true", help="use the learning rate scheduler (default False)")
 parser.add_argument("--momentum", type=float, default=0.9, help="momentum value (default 0.9)")
 parser.add_argument("--weight-decay", type=float, default=0.0001, help="weight decay value (default 0.0001)")
+parser.add_argument("--custom-tag", type=str, default=None, help="custom tag to be added to wandb log")
 # model settings
 parser.add_argument("--model-name", type=str, default="VGG16", help="model name (default VGG16)")
 parser.add_argument("--custom-layer-name", type=str, default="None", help="custom layer (default 'None', supports 'None', 'ReLU', 'NormOut', and 'TopK')")
@@ -27,6 +28,7 @@ parser.add_argument("--p", type=float, default=0.5, help="p value for Dropout (p
 parser.add_argument("--exponent", type=int, default=2, help="exponent for exponential NormOut (default 2)")
 parser.add_argument("--vgg-no-batch-norm", action="store_true", default=False, help="don't use batch norm (default False)")
 parser.add_argument("--normout-delay-epochs", type=int, default=0, help="number of epochs to delay using normout")
+parser.add_argument("--replace-layers", type=int, nargs="+", default=None, help="layer indices at which the layer is placed with the custom layer")
 parser.add_argument("--remove-layers", type=int, nargs="+", default=None, help="layer indices at which the layer is removed from the model; give vals in ascending order")
 parser.add_argument("--insert-layers", type=int, nargs="+", default=None, help="layer indices at which a custom layer is inserted (NOTE: layers for this step are indexed after any removal from remove-layers!!)")
 # attack params
@@ -45,8 +47,13 @@ else:
 
 # wandb setup
 tags = [args.model_name, args.custom_layer_name, args.optimizer, args.dset_name]
-if args.custom_layer_name is not None:
+'''
+if args.custom_layer_name != "None" and args.insert_layers is not None:
     tags.append(f"{args.custom_layer_name} layers at {args.insert_layers}")
+if args.custom_layer_name != "None" and args.replace_layers is not None:
+    tags.append(f"Layers at {args.replace_layers} replaced with {args.custom_layer_name}")
+'''
+tags.append(args.custom_tag)
 if args.no_adversarial_pgd is False:
     tags.append(f'pgd_steps = {args.pgd_steps}')
 if args.use_cifar_data_augmentation:

@@ -20,6 +20,7 @@ class Custom_Model(Attacks, BasicLightningModel):
         k,
         remove_layers,
         insert_layers,
+        replace_layers,
         **kwargs
     ):
         BasicLightningModel.__init__(self, **kwargs)
@@ -44,6 +45,12 @@ class Custom_Model(Attacks, BasicLightningModel):
             raise NotImplementedError("model type not implemented")
 
         # Model surgery
+        if custom_layer is not None and replace_layers is not None:
+            print("Layer replacements:")
+            for i in replace_layers:
+                print(f"{layers[i]} at index {i} replaced with {custom_layer_name}")
+                layers[i] = custom_layer
+                
         if remove_layers is not None:
             print("Layer removals:")
             for i in reversed(remove_layers): # Reversed to stop indices getting messed up
