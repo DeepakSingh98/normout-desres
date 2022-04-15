@@ -23,6 +23,7 @@ class BasicLightningModel(pl.LightningModule, ABC):
         lr=0.01,
         weight_decay = 0.0001,
         momentum = 0.9,
+        use_scheduler=False,
         # catch other kwargs
         **kwargs
         ):
@@ -37,6 +38,7 @@ class BasicLightningModel(pl.LightningModule, ABC):
         self.weight_decay = weight_decay
         self.momentum = momentum
         self.num_workers = num_workers
+        self.use_scheduler = use_scheduler
 
         # dataset
         self.define_dataset(dset_name)
@@ -65,7 +67,7 @@ class BasicLightningModel(pl.LightningModule, ABC):
             # TODO USING DATA AUGMENTATION TO GET BASELINE
 
             # My version of CIFAR10 data augmentation
-            pretrained_size = 224
+            pretrained_size = 32
             pretrained_means = [0.485, 0.456, 0.406]
             pretrained_stds = [0.229, 0.224, 0.225]
 
@@ -123,12 +125,17 @@ class BasicLightningModel(pl.LightningModule, ABC):
         else:
             raise NotImplementedError("Optimizer not implemented")
         
-        return {"optimizer": optimizer,
-                "lr_scheduler": {
-                "scheduler": torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1), # TODO note doing this
-                "interval": "step",
-                }
-        }
+
+        if self.use_scheduler:
+            return {"optimizer": optimizer,
+                    "lr_scheduler": {
+                    "scheduler": torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1), # TODO note doing this
+                    "interval": "step",
+                    }
+            }
+        
+        else:
+            return optimizer
 
     # dataloaders
     def train_dataloader(self):

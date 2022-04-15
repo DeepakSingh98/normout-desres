@@ -12,9 +12,10 @@ parser.add_argument("--batch-size", type=int, default=256, help="batch size (def
 parser.add_argument("--num-workers", type=int, default=4, help="number of workers used for data loading (default 4)")
 parser.add_argument("--num-gpus", type=int, default=1, help="number of gpus to use (default 1)")
 parser.add_argument("--dset-name", type=str, default="CIFAR10", help="dataset name (default CIFAR10, also supports MNIST-Fashion)")
-parser.add_argument("--use-cifar-data-augmentation", default=True, action="store_true", help="use data augmentation from CIFAR10 (default True)")
+parser.add_argument("--use-cifar-data-augmentation", default=False, action="store_true", help="use data augmentation from CIFAR10 (default True)")
 parser.add_argument("--optimizer", type=str, default="SGDM", help="optimizer (default SGDM, also supports Adam)")
-parser.add_argument("--lr", type=float, default=0.1, help="learning rate (default 0.1)")
+parser.add_argument("--lr", type=float, default=0.01, help="learning rate (default 0.01)")
+parser.add_argument("--use-scheduler", default=False, action="store_true", help="use the learning rate scheduler (default False)")
 parser.add_argument("--momentum", type=float, default=0.9, help="momentum value (default 0.9)")
 parser.add_argument("--weight-decay", type=float, default=0.0001, help="weight decay value (default 0.0001)")
 # model settings
@@ -31,7 +32,7 @@ parser.add_argument("--insert-layers", type=int, nargs="+", default=None, help="
 # attack params
 parser.add_argument("--no-adversarial-fgm", action="store_true", default=False, help="don't use FGM (default False)")
 parser.add_argument("--no-adversarial-pgd", action="store_true", default=False, help="don't use PGD (default False)")
-parser.add_argument("--no-autoattack", action="store_true", default=False, help="don't use AutoAttack (default False)")
+parser.add_argument("--no-autoattack", action="store_true", default=True, help="don't use AutoAttack (default True)")
 parser.add_argument("--adv-eps", type=float, default=0.03, help="adversarial epsilon (default 0.03)")
 parser.add_argument("--pgd-steps", type=int, default=10, help="number of steps for PGD (default 10)")
 args = parser.parse_args()
@@ -44,7 +45,10 @@ else:
 
 # wandb setup
 tags = [args.model_name, args.custom_layer_name, args.optimizer, args.dset_name]
-tags.append(f'pgd_steps = {args.pgd_steps}')
+if args.custom_layer_name is not None:
+    tags.append(f"{args.custom_layer_name} layers at {args.insert_layers}")
+if args.no_adversarial_pgd is False:
+    tags.append(f'pgd_steps = {args.pgd_steps}')
 if args.use_cifar_data_augmentation:
     tags.append("DataAug")
 if args.custom_layer_name == "NormOut":
