@@ -47,15 +47,16 @@ else:
 
 # wandb setup
 tags = [args.model_name, args.custom_layer_name, args.optimizer, args.dset_name]
-'''
-if args.custom_layer_name != "None" and args.insert_layers is not None:
-    tags.append(f"{args.custom_layer_name} layers at {args.insert_layers}")
 if args.custom_layer_name != "None" and args.replace_layers is not None:
     tags.append(f"Layers at {args.replace_layers} replaced with {args.custom_layer_name}")
-'''
-tags.append(args.custom_tag)
-if args.no_adversarial_pgd is False:
-    tags.append(f'pgd_steps = {args.pgd_steps}')
+if args.custom_layer_name != "None" and args.insert_layers is not None:
+    tags.append(f"{args.custom_layer_name} layers at {args.insert_layers}")
+if args.remove_layers is not None:
+    tags.append(f"Layers removed from indices {args.remove_layers}")
+if args.custom_tag:
+    tags.append(args.custom_tag)
+#if args.no_adversarial_pgd is False:
+ #   tags.append(f'pgd_steps = {args.pgd_steps}')
 if args.use_cifar_data_augmentation:
     tags.append("DataAug")
 if args.custom_layer_name == "NormOut":
