@@ -7,7 +7,7 @@ class NormOut(nn.Module):
     by the max activation of the layer. When `use_abs` is True, we use the absolute value of the activations 
     instead of the activations themselves.
     """
-    def __init__(self, use_abs):
+    def __init__(self, use_abs=False):
         super().__init__()
         self.use_abs = use_abs
         if not self.use_abs:
