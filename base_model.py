@@ -33,7 +33,7 @@ class BasicLightningModel(pl.LightningModule, Attacks, ABC):
         ):
 
         pl.LightningModule.__init__(self)
-        Attacks.__init__(self)
+        Attacks.__init__(self, **kwargs)
         
         # set attributes
         self.batch_size = batch_size
