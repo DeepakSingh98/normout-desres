@@ -31,7 +31,7 @@ class CustomModel(BasicLightningModel):
         super().__init__(**kwargs)
         
         # configure custom layer
-        if custom_layer_name == "None":
+        if custom_layer_name is None:
             custom_layer = None
         elif custom_layer_name == "ReLU":
             custom_layer = nn.ReLU(True)

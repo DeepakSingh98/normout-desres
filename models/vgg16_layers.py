@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-def vgg16_layers(in_channels, num_classes, use_batch_norm, dropout_p=0.5):
+def vgg16_layers(in_channels, num_classes, use_batch_norm, dropout_p):
     """
     Returns a list of the layers in VGG16.
     """
