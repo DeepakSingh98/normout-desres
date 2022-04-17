@@ -5,7 +5,7 @@ from custom_layers.topk import TopK
 from models.vgg16_layers import vgg16_layers
 import torch.nn as nn
 
-class EditableModel(BasicLightningModel):
+class CustomModel(BasicLightningModel):
     """
     Creates an editable version of `model_name`, where specified layers can be removed or replaced with 
     `custom_layer_name` layers, and `custom_layer_name` layers can be inserted at specified indices.

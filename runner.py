@@ -3,7 +3,7 @@ from datetime import datetime
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning import Trainer
 
-from editable_model import EditableModel
+from custom_model import CustomModel
 from utils import set_tags
 
 # parse arguments
@@ -41,7 +41,7 @@ parser.add_argument("--pgd-steps", type=int, default=10, help="number of steps f
 args = parser.parse_args()
 
 # get model
-model = EditableModel(**vars(args))
+model = CustomModel(**vars(args))
 
 # wandb
 tags = set_tags(args)
