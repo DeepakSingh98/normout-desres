@@ -1,19 +1,16 @@
 import torch
 import torch.nn as nn
 
-# CUSTOM LAYERS: take in z values and apply activations
-
 class NormOut(nn.Module):
     """
-    The normout layer takes the activations of the previous layer and sets neurons to zero
-    with probability of their activation divided by the largest activation.
+    Takes the activations of the previous layer and sets neurons to zero with 
+    probability of their activation divided by the largest activation.
     """
     def __init__(self, method="abs", delay_epochs=0, exponent=2):
         super().__init__()
         self.delay_epochs = delay_epochs
         self.method = method
         self.exponent = exponent
-        print(f"Normout method is {method}!")
 
         if self.method == "Abs" or self.method == "Overwrite":
             self.preprocess = abs
@@ -31,17 +28,16 @@ class NormOut(nn.Module):
             raise NotImplementedError("Normout method not implemented.")
         
     def forward(self, x):
-
         if self.method == "Softmax":
             norm_x = self.preprocess(x)
-        
         elif self.method == "Overwrite":
             x = self.preprocess(x)
             norm_x = x / torch.max(x, dim=1, keepdim=True)[0]
-
-        else:
+        elif self.method == "Abs":
             x_prime = self.preprocess(x)
             norm_x = x_prime / torch.max(x_prime, dim=1, keepdim=True)[0]
+        else:
+            raise NotImplementedError("Normout method not implemented.")
 
         x_mask = torch.rand_like(x) < norm_x
         x = x * x_mask
@@ -50,7 +46,7 @@ class NormOut(nn.Module):
 
 class TopK(nn.Module):
     """
-    The TopK layer sets all but the K highest activation values to zero.
+    Sets all but the K highest activation values to zero.
     """
     def __init__(self, k: int):
         super().__init__()
