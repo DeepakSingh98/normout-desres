@@ -25,6 +25,8 @@ class Attacks(ABC):
         no_autoattack=True,
         adv_eps=0.03,
         pgd_steps=40,
+        # catch other kwargs
+        **kwargs
     ):
         # set attributes
         self.adversarial_fgm = not no_adversarial_fgm
@@ -39,10 +41,6 @@ class Attacks(ABC):
             if not os.path.isdir(self.log_path):
                 print(f"creating {self.log_path} directory...")
                 os.makedirs(self.log_path)
-        
-        # accuracy metrics
-        self.fgm_acc = torchmetrics.Accuracy()
-        self.pgd_acc = torchmetrics.Accuracy()
 
     def on_validation_epoch_end(self):
         """
@@ -72,7 +70,7 @@ class Attacks(ABC):
                 )
                 self.log(
                     f"Adversarial FGM Accuracy \n(eps={self.adv_eps}, norm=inf)",
-                    self.fgm_acc(y_hat_adv_pgd, y),
+                    torchmetrics.accuracy(y_hat_adv_pgd, y),
                 )
 
             if self.adversarial_pgd:
@@ -83,7 +81,7 @@ class Attacks(ABC):
                 )
                 self.log(
                     f"Adversarial PGD Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
-                    self.pgd_acc(y_hat_adv_pgd, y),
+                    torchmetrics.accuracy(y_hat_adv_pgd, y),
                 )
 
     def pgd_attack(self, x, y):
