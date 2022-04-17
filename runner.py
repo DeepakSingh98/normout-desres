@@ -4,7 +4,6 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning import Trainer
 from models.custom_model import Custom_Model
 
-# parse command line inputs
 parser = argparse.ArgumentParser()
 # basic
 parser.add_argument("--epochs", type=int, default=100, help="number of epochs (default 100)")
@@ -46,23 +45,25 @@ else:
     raise NotImplementedError("model not implemented")
 
 # wandb setup
-tags = [args.model_name, args.custom_layer_name, args.optimizer, args.dset_name]
-if args.custom_layer_name != "None" and args.replace_layers is not None:
-    tags.append(f"Layers at {args.replace_layers} replaced with {args.custom_layer_name}")
-if args.custom_layer_name != "None" and args.insert_layers is not None:
-    tags.append(f"{args.custom_layer_name} layers at {args.insert_layers}")
-if args.remove_layers is not None:
-    tags.append(f"Layers removed from indices {args.remove_layers}")
-if args.custom_tag:
-    tags.append(args.custom_tag)
-#if args.no_adversarial_pgd is False:
- #   tags.append(f'pgd_steps = {args.pgd_steps}')
-if args.use_cifar_data_augmentation:
-    tags.append("DataAug")
-if args.custom_layer_name == "NormOut":
-    tags.append(args.normout_method)
-if args.normout_method == "exp":
-    tags.append(f'exponent={args.exponent}')
+def set_tags(args):
+    tags = [args.model_name, args.custom_layer_name, args.optimizer, args.dset_name]
+    if args.custom_layer_name != "None" and args.replace_layers is not None:
+        tags.append(f"Layers at {args.replace_layers} replaced with {args.custom_layer_name}")
+    if args.custom_layer_name != "None" and args.insert_layers is not None:
+        tags.append(f"{args.custom_layer_name} layers at {args.insert_layers}")
+    if args.remove_layers is not None:
+        tags.append(f"Layers removed from indices {args.remove_layers}")
+    if args.custom_tag:
+        tags.append(args.custom_tag)
+    if args.use_cifar_data_augmentation:
+        tags.append("DataAug")
+    if args.custom_layer_name == "NormOut":
+        tags.append(args.normout_method)
+    if args.normout_method == "exp":
+        tags.append(f'exponent={args.exponent}')
+    return tags
+
+tags = set_tags(args)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 wandb_logger = WandbLogger(

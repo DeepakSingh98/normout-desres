@@ -1,5 +1,6 @@
 from base_model import BasicLightningModel
-from utils import NormOut, TopK
+from layers.normout import NormOut
+from layers.topk import TopK
 from models.vgg16 import vgg16
 from attacks import Attacks
 import torch.nn as nn
