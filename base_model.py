@@ -9,7 +9,7 @@ import torchvision.transforms as transforms
 
 from attacks import Attacks
 
-class BasicLightningModel(pl.LightningModule, Attacks, ABC):
+class BasicLightningModel(Attacks, pl.LightningModule, ABC):
     """
     Defines a base `pl.LightningModule` inherited by all models, responsible for configuring 
     optimizers and dataloaders, and running adversarial attacks (by inheriting `Attacks`).
@@ -79,6 +79,7 @@ class BasicLightningModel(pl.LightningModule, Attacks, ABC):
             assert not self.use_data_augmentation # no data aug supported for MNIST-Fashion
 
             transform = transforms.Compose([
+                            transforms.Resize(32), # TODO: why doesn't this work for 28x28?
                             transforms.ToTensor(), 
                             transforms.Normalize((0.5,), (0.5,))
                         ])
@@ -131,6 +132,7 @@ class BasicLightningModel(pl.LightningModule, Attacks, ABC):
                                 ])
 
             if self.use_data_augmentation:
+                print("Using data augmentation")
                 self.training_set = torchvision.datasets.CIFAR10(
                     "./data", train=True, transform=augment_transforms, download=True
                 )
@@ -173,3 +175,7 @@ class BasicLightningModel(pl.LightningModule, Attacks, ABC):
             shuffle=False,
             num_workers=self.num_workers,
         )
+
+    # run attacks 
+    def on_validation_epoch_end(self):
+        Attacks.on_validation_epoch_end(self)
