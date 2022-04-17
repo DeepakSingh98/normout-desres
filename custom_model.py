@@ -19,7 +19,6 @@ class CustomModel(BasicLightningModel):
         model_name,
         use_batch_norm, 
         custom_layer_name, 
-        normout_delay_epochs,
         use_abs,
         dropout_p,
         topk_k,
@@ -36,7 +35,7 @@ class CustomModel(BasicLightningModel):
         elif custom_layer_name == "ReLU":
             custom_layer = nn.ReLU(True)
         elif custom_layer_name == "NormOut":
-            custom_layer = NormOut(delay_epochs=normout_delay_epochs, use_abs=use_abs)
+            custom_layer = NormOut(use_abs)
         elif custom_layer_name == "TopK":
             custom_layer = TopK(k=topk_k)
         else:
