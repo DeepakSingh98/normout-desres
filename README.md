@@ -3,8 +3,8 @@
 
 ## Files 
 
-- `attacks.py` is where the class Attacks uses the `on_validation_epoch_end` method to run our adversarial attacks used to evaluate robustness.
-- `base_model.py` is an abstract base class for a basic `pl.LightningModule` with `Attacks` inherited (called `BasicLightningModel`). It configures the optimizer and dataloaders, but requires that the `forward` method be defined by a child.
+- `attacks.py` defines the abstract base class `Attacks` which uses the `on_validation_epoch_end` method to run our adversarial attacks used to evaluate robustness.
+- `base_model.py` defines the abstract base class `BasicLightningModel` for a basic `pl.LightningModule` with `Attacks` inherited. It configures the optimizer and dataloaders, but requires that the `forward` method be defined by a child.
 - `editable_model.py` inherits `BasicLightningModel` and defines a model architecture specified by `model-name` where specified layers can be removed or replaced with `custom-layer-name` layers, and `custom-layer-name` layers can be inserted at specified indices.
 - `custom_layers/` stores custom layers (`nn.Module`) like `NormOut`.
 - `models/` stores functions which return a `nn.Module` list corresponding to specified model architectures. These functions correspond to `model-name` specified in `EditableModel`.
