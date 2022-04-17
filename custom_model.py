@@ -7,17 +7,20 @@ import torch.nn as nn
 
 class CustomModel(BasicLightningModel):
     """
-    Creates an editable version of `model_name`, where specified layers can be removed or replaced with 
-    `custom_layer_name` layers, and `custom_layer_name` layers can be inserted at specified indices.
+    Inherits `BasicLightningModel` and defines a base model architecture specified by `model-name`. Models can be customized as follows:
+    1. Replacing existing layers with custom layers (e.g., `--custom-layer-name NormOut --replace-layers 47 50` replaces the layers at indices 47 and 50 with `NormOut` layers).
+    2. Removing layers (e.g., `--remove-layers 20` removes the layer at index 20)
+    3. Inserting custom layers (e.g., `--custom-layer-name NormOut --insert-layer 53` inserts a `NormOut` layer at index 53). 
+    *Note: The editing is performed in the following order: replace, remove, insert. All indices should be listed in increasing order.*
     """
 
     def __init__(
         self, 
         model_name,
-        vgg_no_batch_norm, 
+        use_batch_norm, 
         custom_layer_name, 
         normout_delay_epochs,
-        normout_method,
+        use_abs,
         dropout_p,
         topk_k,
         remove_layers,
@@ -33,7 +36,7 @@ class CustomModel(BasicLightningModel):
         elif custom_layer_name == "ReLU":
             custom_layer = nn.ReLU(True)
         elif custom_layer_name == "NormOut":
-            custom_layer = NormOut(delay_epochs=normout_delay_epochs, method=normout_method)
+            custom_layer = NormOut(delay_epochs=normout_delay_epochs, use_abs=use_abs)
         elif custom_layer_name == "TopK":
             custom_layer = TopK(k=topk_k)
         else:
@@ -41,7 +44,7 @@ class CustomModel(BasicLightningModel):
 
         # get model
         if model_name == "VGG16":
-            layers: List[nn.Module] = vgg16_layers(self.num_channels, self.num_classes, vgg_no_batch_norm, dropout_p=dropout_p)
+            layers: List[nn.Module] = vgg16_layers(self.num_channels, self.num_classes, use_batch_norm, dropout_p=dropout_p)
         else:
             raise NotImplementedError("model type not implemented")
 

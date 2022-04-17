@@ -20,23 +20,23 @@ class Attacks(ABC):
 
     def __init__(
         self,
-        no_adversarial_fgm,
-        no_adversarial_pgd,
-        no_autoattack,
+        use_adversarial_fgm,
+        use_adversarial_pgd,
+        use_autoattack,
         adv_eps,
         pgd_steps,
         # catch other kwargs
         **kwargs
     ):
         # set attributes
-        self.adversarial_fgm = not no_adversarial_fgm
-        self.adversarial_pgd = not no_adversarial_pgd
-        self.autoattack = not no_autoattack
+        self.use_adversarial_fgm = use_adversarial_fgm
+        self.use_adversarial_pgd = use_adversarial_pgd
+        self.use_autoattack = use_autoattack
         self.adv_eps = adv_eps
         self.pgd_steps = pgd_steps
 
         # mkdir logging directory for AutoAttack if needed
-        if self.autoattack:
+        if self.use_autoattack:
             self.log_path = f'./autoattack_logs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
             if not os.path.isdir(self.log_path):
                 print(f"creating {self.log_path} directory...")
@@ -57,12 +57,12 @@ class Attacks(ABC):
             torch.set_grad_enabled(True)
             x.requires_grad = True
 
-            if self.autoattack:
+            if self.use_autoattack:
                 adversary = AutoAttack(self, norm='Linf',eps=8/255, version='rand', log_path=f'{self.log_path}/{self.logger._name}.txt')
                 adversary.run_standard_evaluation(x, y)  
                 wandb.save(f'{self.log_path}/{self.logger._name}.txt')
 
-            if self.adversarial_fgm:
+            if self.use_adversarial_fgm:
                 loss_adv_fgm, y_hat_adv_pgd, _ = self.fgm_attack(x, y)
                 self.log(
                     f"Adversarial FGM Loss \n(eps={self.adv_eps}, norm=inf)",
@@ -73,7 +73,7 @@ class Attacks(ABC):
                     torchmetrics.accuracy(y_hat_adv_pgd, y),
                 )
 
-            if self.adversarial_pgd:
+            if self.use_adversarial_pgd:
                 loss_adv_pgd, y_hat_adv_pgd, _ = self.pgd_attack(x, y)
                 self.log(
                     f"Adversarial PGD Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",

@@ -5,7 +5,7 @@ class TopK(nn.Module):
     """
     Sets all but the K highest activation values to zero.
     """
-    def __init__(self, k: int):
+    def __init__(self, k):
         super().__init__()
         self.k = k
     

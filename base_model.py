@@ -11,8 +11,8 @@ from attacks import Attacks
 
 class BasicLightningModel(pl.LightningModule, Attacks, ABC):
     """
-    Defines a base `LightningModule` inherited by all models,
-    responsible for configuring optimizers and dataloaders.
+    Defines a base `pl.LightningModule` inherited by all models, responsible for configuring 
+    optimizers and dataloaders, and running adversarial attacks (by inheriting `Attacks`).
     """
 
     def __init__(
@@ -27,7 +27,6 @@ class BasicLightningModel(pl.LightningModule, Attacks, ABC):
         lr,
         weight_decay,
         momentum,
-        use_scheduler,
         # catch other kwargs
         **kwargs
         ):
@@ -44,7 +43,6 @@ class BasicLightningModel(pl.LightningModule, Attacks, ABC):
         self.lr = lr
         self.weight_decay = weight_decay
         self.momentum = momentum
-        self.use_scheduler = use_scheduler
 
         # dataset
         self.define_dataset(dset_name)
@@ -96,8 +94,8 @@ class BasicLightningModel(pl.LightningModule, Attacks, ABC):
 
         elif dset_name == "CIFAR10":
 
-            pretrained_means = [0.485, 0.456, 0.406]
-            pretrained_stds = [0.229, 0.224, 0.225]
+            pretrained_means = [0.4914, 0.4822, 0.4465]
+            pretrained_stds = [0.2023, 0.1994, 0.2010]
 
             # per https://github.com/moritzhambach/Image-Augmentation-in-Keras-CIFAR-10-
             augment_transforms = transforms.Compose([
@@ -132,18 +130,13 @@ class BasicLightningModel(pl.LightningModule, Attacks, ABC):
                                                          std=pretrained_stds)
                                 ])
 
-            transform = transforms.Compose([
-                            transforms.ToTensor(),
-                            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),                
-                        ])
-
             if self.use_data_augmentation:
                 self.training_set = torchvision.datasets.CIFAR10(
                     "./data", train=True, transform=augment_transforms, download=True
                 )
             else:
                 self.training_set = torchvision.datasets.CIFAR10(
-                    "./data", train=True, transform=transform, download=True
+                    "./data", train=True, transform=plain_transforms, download=True
                 )
                 
             self.validation_set = torchvision.datasets.CIFAR10(
@@ -163,17 +156,7 @@ class BasicLightningModel(pl.LightningModule, Attacks, ABC):
             optimizer =  torch.optim.Adam(self.parameters(), lr=self.lr)
         else:
             raise NotImplementedError("Optimizer not implemented")
-
-        if self.use_scheduler:
-            return {"optimizer": optimizer,
-                    "lr_scheduler": {
-                        "scheduler": torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1), # TODO: other lr schedulers?
-                        "interval": "step",
-                    }
-            }
-        
-        else:
-            return optimizer
+        return optimizer
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(

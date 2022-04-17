@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-def vgg16_layers(in_channels, num_classes, vgg_no_batch_norm, dropout_p=0.5):
+def vgg16_layers(in_channels, num_classes, use_batch_norm, dropout_p=0.5):
     """
     Returns a list of the layers in VGG16.
     """
@@ -17,10 +17,10 @@ def vgg16_layers(in_channels, num_classes, vgg_no_batch_norm, dropout_p=0.5):
 
         else:
             conv2d = nn.Conv2d(in_channels, c, kernel_size=3, padding=1)
-            if vgg_no_batch_norm:
-                layers += [conv2d, nn.ReLU(inplace=True)]
-            else:
+            if use_batch_norm:
                 layers += [conv2d, nn.BatchNorm2d(c), nn.ReLU(inplace=True)]
+            else:
+                layers += [conv2d, nn.ReLU(inplace=True)]
             in_channels = c
 
     layers += [nn.AdaptiveAvgPool2d(7)]
