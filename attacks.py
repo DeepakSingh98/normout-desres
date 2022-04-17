@@ -63,14 +63,14 @@ class Attacks(ABC):
                 wandb.save(f'{self.log_path}/{self.logger._name}.txt')
 
             if self.use_adversarial_fgm:
-                loss_adv_fgm, y_hat_adv_pgd, _ = self.fgm_attack(x, y)
+                loss_adv_fgm, y_hat_adv_fgm, _ = self.fgm_attack(x, y)
                 self.log(
                     f"Adversarial FGM Loss \n(eps={self.adv_eps}, norm=inf)",
                     loss_adv_fgm,
                 )
                 self.log(
                     f"Adversarial FGM Accuracy \n(eps={self.adv_eps}, norm=inf)",
-                    torchmetrics.accuracy(y_hat_adv_pgd, y),
+                    (y_hat_adv_fgm.argmax(dim=1) == y).float().mean(),
                 )
 
             if self.use_adversarial_pgd:
@@ -81,7 +81,7 @@ class Attacks(ABC):
                 )
                 self.log(
                     f"Adversarial PGD Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
-                    torchmetrics.accuracy(y_hat_adv_pgd, y),
+                    (y_hat_adv_pgd.argmax(dim=1) == y).float().mean(),
                 )
 
     def pgd_attack(self, x, y):
