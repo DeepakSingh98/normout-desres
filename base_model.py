@@ -7,7 +7,9 @@ import torchmetrics
 import torchvision
 import torchvision.transforms as transforms
 
-class BasicLightningModel(pl.LightningModule, ABC):
+from attacks import Attacks
+
+class BasicLightningModel(pl.LightningModule, Attacks, ABC):
     """
     Defines a base `LightningModule` inherited by all models,
     responsible for configuring optimizers and dataloaders.
@@ -31,6 +33,7 @@ class BasicLightningModel(pl.LightningModule, ABC):
         ):
 
         pl.LightningModule.__init__(self)
+        Attacks.__init__(self)
         
         # set attributes
         self.batch_size = batch_size

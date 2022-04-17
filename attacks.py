@@ -20,11 +20,11 @@ class Attacks(ABC):
 
     def __init__(
         self,
-        no_adversarial_fgm=True,
-        no_adversarial_pgd=True,
-        no_autoattack=True,
-        adv_eps=0.03,
-        pgd_steps=40,
+        no_adversarial_fgm,
+        no_adversarial_pgd,
+        no_autoattack,
+        adv_eps,
+        pgd_steps,
         # catch other kwargs
         **kwargs
     ):

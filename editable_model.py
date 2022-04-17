@@ -1,15 +1,16 @@
+from typing import List
 from base_model import BasicLightningModel
 from layers.normout import NormOut
 from layers.topk import TopK
-from models.vgg16 import vgg16
-from attacks import Attacks
+from models.vgg16_layers import vgg16_layers
 import torch.nn as nn
-import torch
 
-import gc
+class EditableModel(BasicLightningModel):
+    """
+    Creates an editable version of `model_name`, where specified layers can be removed or replaced by 
+    `custom_layer_name` layers, and `custom_layer_name` layers can be inserted at specified indices.
+    """
 
-# new models must define a forward, training_step, and validation_step method, and may define a on_train_epoch_end method.
-class Custom_Model(Attacks, BasicLightningModel):
     def __init__(
         self, 
         model_name,
@@ -17,35 +18,33 @@ class Custom_Model(Attacks, BasicLightningModel):
         custom_layer_name, 
         normout_delay_epochs,
         normout_method,
-        p,
-        k,
+        dropout_p,
+        topk_k,
         remove_layers,
         insert_layers,
         replace_layers,
         **kwargs
     ):
-        BasicLightningModel.__init__(self, **kwargs)
-        Attacks.__init__(self, **kwargs)
-
-        # custom_layer
-        if custom_layer_name == "None":
-            custom_layer = None
-        elif custom_layer_name == "ReLU":
+        super().__init__(**kwargs)
+        
+        # configure custom layer
+        custom_layer = None
+        if custom_layer_name == "ReLU":
             custom_layer = nn.ReLU(True)
         elif custom_layer_name == "NormOut":
             custom_layer = NormOut(delay_epochs=normout_delay_epochs, method=normout_method)
         elif custom_layer_name == "TopK":
-            custom_layer = TopK(k=k)
+            custom_layer = TopK(k=topk_k)
         else:
-            raise ValueError("custom_layer_name must be 'ReLU', 'BaselineDropout', 'NormOut', or 'TopK'")
+            raise ValueError("custom_layer_name must be 'ReLU', 'NormOut', or 'TopK'")
 
-        # Get model layers
+        # get model
         if model_name == "VGG16":
-            layers = vgg16(self.num_channels, self.num_classes, vgg_no_batch_norm)
+            layers: List[nn.Module] = vgg16_layers(self.num_channels, self.num_classes, vgg_no_batch_norm, dropout_p=dropout_p)
         else:
             raise NotImplementedError("model type not implemented")
 
-        # Model surgery
+        # perform surgery
         if custom_layer is not None and replace_layers is not None:
             print("Layer replacements:")
             for i in replace_layers:
@@ -65,19 +64,17 @@ class Custom_Model(Attacks, BasicLightningModel):
                 layers.insert(i, custom_layer)
                 
         self.model = nn.Sequential(*layers)
-
-        del layers
-
-        print(f"Model is {model_name}!")
-
-        if custom_layer is not None:
-            print(f"{custom_layer_name} layers in use at indices {insert_layers}")
-            
-        print(self.model)
+        self.report_state(model_name, custom_layer_name, insert_layers, custom_layer)
 
     def forward(self, x):
         x = self.model(x)
         return x
 
-    def on_validation_epoch_end(self):
-        Attacks.on_validation_epoch_end(self)
+    def report_state(self, model_name, custom_layer_name, insert_layers, custom_layer):
+        """
+        Useful logging.
+        """
+        print(f"Model is {model_name}!")
+        if custom_layer is not None:
+            print(f"{custom_layer_name} layers in use at indices {insert_layers}")
+        print(self.model)

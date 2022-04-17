@@ -1,11 +1,13 @@
-import torch
 import torch.nn as nn
 
-# Function which returns a list of the layers in VGG16
-def vgg16(in_channels, num_classes, vgg_no_batch_norm):
+def vgg16_layers(in_channels, num_classes, vgg_no_batch_norm, dropout_p=0.5):
+    """
+    Returns a list of the layers in VGG16.
+    """
 
     layers = []
 
+    # features
     features_config = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512,
                     'M', 512, 512, 512, 'M']
 
@@ -25,13 +27,14 @@ def vgg16(in_channels, num_classes, vgg_no_batch_norm):
     
     layers += [nn.Flatten()]
 
+    # classifier
     layers += [
         nn.Linear(512 * 7 * 7, 4096),
         nn.ReLU(True),
-        nn.Dropout(),
+        nn.Dropout(p=dropout_p),
         nn.Linear(4096, 4096),
         nn.ReLU(True),
-        nn.Dropout(),
+        nn.Dropout(p=dropout_p),
         nn.Linear(4096, num_classes)
     ]
 
