@@ -28,8 +28,9 @@ class EditableModel(BasicLightningModel):
         super().__init__(**kwargs)
         
         # configure custom layer
-        custom_layer = None
-        if custom_layer_name == "ReLU":
+        if custom_layer_name == "None":
+            custom_layer = None
+        elif custom_layer_name == "ReLU":
             custom_layer = nn.ReLU(True)
         elif custom_layer_name == "NormOut":
             custom_layer = NormOut(delay_epochs=normout_delay_epochs, method=normout_method)
