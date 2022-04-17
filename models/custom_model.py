@@ -1,4 +1,4 @@
-from basic_lightning_model import BasicLightningModel
+from base_model import BasicLightningModel
 from utils import NormOut, TopK
 from models.vgg16 import vgg16
 from attacks import Attacks
