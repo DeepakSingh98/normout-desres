@@ -8,6 +8,7 @@
 - `editable_model.py` inherits `BasicLightningModel` and defines a model architecture specified by `model-name` where specified layers can be removed or replaced with `custom-layer-name` layers, and `custom-layer-name` layers can be inserted at specified indices.
 - `custom_layers/` stores custom layers (`nn.Module`) like `NormOut`.
 - `models/` stores functions which return a `nn.Module` list corresponding to specified model architectures. These functions correspond to `model-name` specified in `EditableModel`.
+- `runner.py` is the runner file for training. Use `python runner.py -h` to see runner specifications. 
 
 ## Usage 
 
