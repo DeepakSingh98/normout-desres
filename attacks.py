@@ -53,10 +53,10 @@ class Attacks(ABC):
                                                   dataset='cifar10',
                                                   threat_model='Linf', 
                                                   eps=8/255,
-                                                  n_examples=10,
+                                                  n_examples=40,
                                                   device=self.device,
                                                   preprocessing=self.plain_transforms,
-                                                  ) # TODO: do more than just 10 examples during final evaluation. Is .copy() sketchy?
+                                                  ) # TODO: do more than just 40 examples during final evaluation. Is .copy() sketchy?
                 print("RobustBench Clean Accuracy: ", clean_acc)
                 print("RobustBench Robust Accuracy: ", robust_acc)
                 self.log(
