@@ -1,15 +1,12 @@
 from abc import ABC
-import datetime
+from copy import deepcopy
 import numpy as np
-import os
-import wandb
 
-from autoattack import AutoAttack
+from robustbench.eval import benchmark
 from cleverhans.torch.attacks.fast_gradient_method import fast_gradient_method
 from cleverhans.torch.attacks.projected_gradient_descent import (
     projected_gradient_descent,
 )
-import torchmetrics
 import torch
 import torch.nn.functional as F
 
@@ -22,7 +19,7 @@ class Attacks(ABC):
         self,
         use_adversarial_fgm,
         use_adversarial_pgd,
-        use_autoattack,
+        use_robustbench,
         adv_eps,
         pgd_steps,
         # catch other kwargs
@@ -31,16 +28,9 @@ class Attacks(ABC):
         # set attributes
         self.use_adversarial_fgm = use_adversarial_fgm
         self.use_adversarial_pgd = use_adversarial_pgd
-        self.use_autoattack = use_autoattack
+        self.use_robustbench = use_robustbench
         self.adv_eps = adv_eps
         self.pgd_steps = pgd_steps
-
-        # mkdir logging directory for AutoAttack if needed
-        if self.use_autoattack:
-            self.log_path = f'./autoattack_logs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
-            if not os.path.isdir(self.log_path):
-                print(f"creating {self.log_path} directory...")
-                os.makedirs(self.log_path)
 
     def on_validation_epoch_end(self):
         """
@@ -57,10 +47,24 @@ class Attacks(ABC):
             torch.set_grad_enabled(True)
             x.requires_grad = True
 
-            if self.use_autoattack:
-                adversary = AutoAttack(self, norm='Linf',eps=8/255, version='rand', log_path=f'{self.log_path}/{self.logger._name}.txt')
-                adversary.run_standard_evaluation(x, y)  
-                wandb.save(f'{self.log_path}/{self.logger._name}.txt')
+            if self.use_robustbench:
+                print("Evaluating RobustBenchmark...")
+                clean_acc, robust_acc = benchmark(self,
+                                                  dataset='cifar10',
+                                                  threat_model='Linf', 
+                                                  eps=8/255,
+                                                  n_examples=10,
+                                                  device=self.device,
+                                                  preprocessing=self.plain_transforms,
+                                                  ) # TODO: do more than just 10 examples during final evaluation. Is .copy() sketchy?
+                print("RobustBench Clean Accuracy: ", clean_acc)
+                print("RobustBench Robust Accuracy: ", robust_acc)
+                self.log(
+                    "RobustBench Clean Accuracy", clean_acc,
+                )
+                self.log(
+                    "RobustBench Robust Accuracy (Linf 8/255)", robust_acc,
+                )
 
             if self.use_adversarial_fgm:
                 loss_adv_fgm, y_hat_adv_fgm, _ = self.fgm_attack(x, y)

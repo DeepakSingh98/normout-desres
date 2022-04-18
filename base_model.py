@@ -78,16 +78,16 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
             
             assert not self.use_data_augmentation # no data aug supported for MNIST-Fashion
 
-            transform = transforms.Compose([
+            self.plain_transforms = transforms.Compose([
                             transforms.Resize(32), # TODO: why doesn't this work for 28x28?
                             transforms.ToTensor(), 
                             transforms.Normalize((0.5,), (0.5,))
                         ])
             self.training_set = torchvision.datasets.FashionMNIST(
-                "./data", train=True, transform=transform, download=True
+                "./data", train=True, transform=self.plain_transforms, download=True
             )
             self.validation_set = torchvision.datasets.FashionMNIST(
-                "./data", train=False, transform=transform, download=True
+                "./data", train=False, transform=self.plain_transforms, download=True
             )
             
             self.num_channels = 1
@@ -125,7 +125,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
                 transforms.Normalize(pretrained_means, pretrained_stds)
             ])
 
-            plain_transforms = transforms.Compose([
+            self.plain_transforms = transforms.Compose([
                                     transforms.ToTensor(),
                                     transforms.Normalize(mean=pretrained_means,
                                                          std=pretrained_stds)
@@ -138,11 +138,11 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
                 )
             else:
                 self.training_set = torchvision.datasets.CIFAR10(
-                    "./data", train=True, transform=plain_transforms, download=True
+                    "./data", train=True, transform=self.plain_transforms, download=True
                 )
                 
             self.validation_set = torchvision.datasets.CIFAR10(
-                "./data", train=False, transform=plain_transforms, download=True
+                "./data", train=False, transform=self.plain_transforms, download=True
             )
                 
             self.num_channels = 3
