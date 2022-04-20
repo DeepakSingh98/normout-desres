@@ -1,6 +1,7 @@
 from typing import List
 from base_model import BasicLightningModel
 from custom_layers.normout import NormOut
+from custom_layers.normout_determ import DeterministicNormOut
 from custom_layers.topk import TopK
 from models.vgg16_layers import vgg16_layers
 import torch.nn as nn
@@ -36,6 +37,8 @@ class CustomModel(BasicLightningModel):
             custom_layer = nn.ReLU(True)
         elif custom_layer_name == "NormOut":
             custom_layer = NormOut(use_abs)
+        elif custom_layer_name == "DeterministicNormOut":
+            custom_layer = DeterministicNormOut(use_abs)
         elif custom_layer_name == "TopK":
             custom_layer = TopK(k=topk_k)
         else:
