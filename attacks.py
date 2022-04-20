@@ -1,5 +1,4 @@
 from abc import ABC
-from copy import deepcopy
 import numpy as np
 
 from robustbench.eval import benchmark
