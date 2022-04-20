@@ -42,6 +42,7 @@ class CustomModel(BasicLightningModel):
         elif custom_layer_name == "NormOutBlock":
             custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), NormOut(use_abs), nn.ReLU(True)]
         elif custom_layer_name == "DetNormOutBlock":
+            custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), DeterministicNormOut(use_abs), nn.ReLU(True)]
         elif custom_layer_name == "TopK":
             custom_layer = TopK(k=topk_k)
         else:

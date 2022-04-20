@@ -21,7 +21,7 @@ parser.add_argument("--weight-decay", type=float, default=0.0001, help="weight d
 parser.add_argument("--custom-tag", type=str, default=None, help="custom tag to be added to wandb log")
 # model settings
 parser.add_argument("--model-name", type=str, default="VGG16", help="model name (default VGG16)")
-parser.add_argument("--custom-layer-name", type=str, default=None, help="custom layer (default None, supports 'ReLU', 'NormOut', 'DeterministicNormOut', and 'TopK')")
+parser.add_argument("--custom-layer-name", type=str, default=None, help="custom layer (default None, supports 'ReLU', 'NormOut', 'DeterministicNormOut', 'NormOutBlock', 'DetNormOutBlock , and 'TopK')")
 parser.add_argument("--use-abs", type=bool, default=True, help="Use absolute value of input during NormOut (default True)")
 parser.add_argument("--topk-k", type=int, default=10, help="k value for TopK")
 parser.add_argument("--dropout-p", type=float, default=0.5, help="p value for Dropout (probability of neuron being dropped)")
