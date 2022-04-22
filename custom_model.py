@@ -1,5 +1,6 @@
 from typing import List
 from base_model import BasicLightningModel
+from custom_layers.always_dropout import AlwaysDropout
 from custom_layers.normout import NormOut
 from custom_layers.normout_determ import DeterministicNormOut
 from custom_layers.topk import TopK
@@ -29,18 +30,21 @@ class CustomModel(BasicLightningModel):
         **kwargs
     ):
         super().__init__(**kwargs)
+        self.custom_layer_name = custom_layer_name
         
         # configure custom layer
         if custom_layer_name is None:
-            custom_layer = None
+            self.custom_layer = None
         elif custom_layer_name == "ReLU":
-            custom_layer = nn.ReLU(True)
+            self.custom_layer = nn.ReLU(True)
         elif custom_layer_name == "NormOut":
-            custom_layer = NormOut(use_abs)
+            self.custom_layer = NormOut(use_abs)
         elif custom_layer_name == "DeterministicNormOut":
-            custom_layer = DeterministicNormOut(use_abs)
+            self.custom_layer = DeterministicNormOut(use_abs)
         elif custom_layer_name == "TopK":
-            custom_layer = TopK(k=topk_k)
+            self.custom_layer = TopK(k=topk_k)
+        elif custom_layer_name == "AlwaysDropout":
+            self.custom_layer = AlwaysDropout(p=dropout_p)
         else:
             raise ValueError("custom_layer_name must be 'ReLU', 'NormOut', or 'TopK'")
 
@@ -51,11 +55,11 @@ class CustomModel(BasicLightningModel):
             raise NotImplementedError("model type not implemented")
 
         # perform surgery
-        if custom_layer is not None and replace_layers is not None:
+        if self.custom_layer is not None and replace_layers is not None:
             print("Layer replacements:")
             for i in replace_layers:
                 print(f"{layers[i]} at index {i} replaced with {custom_layer_name}")
-                layers[i] = custom_layer
+                layers[i] = self.custom_layer
                 
         if remove_layers is not None:
             print("Layer removals:")
@@ -63,14 +67,14 @@ class CustomModel(BasicLightningModel):
                 print(f"{layers[i]} removed from index {i}")
                 layers.pop(i)
 
-        if custom_layer is not None and insert_layers is not None:
+        if self.custom_layer is not None and insert_layers is not None:
             print("Layer insertions:")
             for i in insert_layers:
                 print(f"{custom_layer_name} inserted at index {i}")
-                layers.insert(i, custom_layer)
+                layers.insert(i, self.custom_layer)
                 
         self.model = nn.Sequential(*layers)
-        self.report_state(model_name, custom_layer_name, insert_layers, custom_layer)
+        self.report_state(model_name, custom_layer_name, insert_layers, self.custom_layer)
 
     def forward(self, x):
         x = self.model(x)
@@ -84,3 +88,9 @@ class CustomModel(BasicLightningModel):
         if custom_layer is not None:
             print(f"{custom_layer_name} layers in use at indices {insert_layers}")
         print(self.model)
+    
+    def on_train_epoch_end(self) -> None:
+        # if epoch == 2 and custom layer is DeterministicNormOut, turn it off
+        # TODO: make this a parameter
+        if self.current_epoch == 30 and self.custom_layer_name == "DeterministicNormOut":
+            self.custom_layer.turn_off()
