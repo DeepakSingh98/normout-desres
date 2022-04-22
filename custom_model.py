@@ -5,6 +5,7 @@ from custom_layers.expout import ExpOut
 from custom_layers.normout import NormOut
 from custom_layers.normout_determ import DeterministicNormOut
 from custom_layers.topk import TopK
+from custom_layers.expout import ExpOut
 from models.vgg16_layers import vgg16_layers
 import torch.nn as nn
 

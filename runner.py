@@ -24,6 +24,7 @@ parser.add_argument("--custom-tag", type=str, default=None, help="custom tag to 
 parser.add_argument("--model-name", type=str, default="VGG16", help="model name (default VGG16)")
 parser.add_argument("--custom-layer-name", type=str, default=None, help="custom layer (default None, supports 'ReLU', 'NormOut', 'AlwaysDropout', 'DeterministicNormOut', 'NormOutBlock', 'DetNormOutBlock , and 'TopK')")
 parser.add_argument("--use-abs", type=bool, default=True, help="Use absolute value of input during NormOut (default True)")
+parser.add_argument("--channel-max", type=bool, default=False, help = "Use channel max ie old buggy version (default False")
 parser.add_argument("--topk-k", type=int, default=10, help="k value for TopK")
 parser.add_argument("--dropout-p", type=float, default=0.5, help="p value for Dropout (probability of neuron being dropped)")
 parser.add_argument("--use-batch-norm", type=bool, default=True, help="use batch norm (default True)")
