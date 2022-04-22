@@ -41,6 +41,10 @@ class CustomModel(BasicLightningModel):
             self.custom_layer = NormOut(use_abs)
         elif custom_layer_name == "DeterministicNormOut":
             self.custom_layer = DeterministicNormOut(use_abs)
+        elif custom_layer_name == "NormOutBlock":
+            self.custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), NormOut(use_abs), nn.ReLU(True)]
+        elif custom_layer_name == "DetNormOutBlock":
+            self.custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), DeterministicNormOut(use_abs), nn.ReLU(True)]
         elif custom_layer_name == "TopK":
             self.custom_layer = TopK(k=topk_k)
         elif custom_layer_name == "AlwaysDropout":
