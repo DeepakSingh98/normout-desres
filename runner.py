@@ -34,6 +34,8 @@ parser.add_argument("--insert-layers", type=int, nargs="+", default=None, help="
 # attacks
 parser.add_argument("--use-adversarial-fgm", type=bool, default=True, help="use adversarial fgm (default True)")
 parser.add_argument("--use-adversarial-pgd", type=bool, default=True, help="use adversarial pgd (default True)")
+parser.add_argument("--use-square-attack", type=bool, default=True, help="use square attack (default True)")
+parser.add_argument("--use-randomized-attacks", type=bool, default=True, help="use randomized attacks (default True)")
 parser.add_argument("--use-robustbench", type=bool, default=False, help="use autoattack (default False)")
 parser.add_argument("--adv-eps", type=float, default=0.03, help="adversarial epsilon (default 0.03)")
 parser.add_argument("--pgd-steps", type=int, default=10, help="number of steps for PGD (default 10)")

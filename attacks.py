@@ -6,8 +6,11 @@ from cleverhans.torch.attacks.fast_gradient_method import fast_gradient_method
 from cleverhans.torch.attacks.projected_gradient_descent import (
     projected_gradient_descent,
 )
+
 import torch
 import torch.nn.functional as F
+from autoattack.square import SquareAttack
+from autoattack import AutoAttack
 
 class Attacks(ABC):
     """
@@ -18,6 +21,8 @@ class Attacks(ABC):
         self,
         use_adversarial_fgm,
         use_adversarial_pgd,
+        use_square_attack,
+        use_randomized_attacks,
         use_robustbench,
         adv_eps,
         pgd_steps,
@@ -27,6 +32,8 @@ class Attacks(ABC):
         # set attributes
         self.use_adversarial_fgm = use_adversarial_fgm
         self.use_adversarial_pgd = use_adversarial_pgd
+        self.use_square_attack = use_square_attack
+        self.use_randomized_attacks = use_randomized_attacks
         self.use_robustbench = use_robustbench
         self.adv_eps = adv_eps
         self.pgd_steps = pgd_steps
@@ -87,6 +94,25 @@ class Attacks(ABC):
                     (y_hat_adv_pgd.argmax(dim=1) == y).float().mean(),
                 )
 
+            if self.use_square_attack:
+                y_hat_adv_square = self.square_attack(x, y)
+                self.log(
+                    f"Adversarial Square Accuracy \n(eps=.3, norm=inf)",
+                    (y_hat_adv_square == y).float().mean(),
+                )
+            
+            if self.use_randomized_attacks:
+                y_hat_ce, y_hat_dlr = self.randomized_attacks(x, y)
+                self.log(
+                    f"Randomized CE Accuracy \n(eps=.3, norm=inf)",
+                    (y_hat_ce == y).float().mean(),
+                )
+                self.log(
+                    f"Randomized DLR Accuracy \n(eps=.3, norm=inf)",
+                    (y_hat_dlr == y).float().mean(),
+                )
+
+
     def pgd_attack(self, x, y):
         """ 
         Performs a projected gradient descent attack on the model as described in
@@ -108,3 +134,26 @@ class Attacks(ABC):
         y_hat_adv = self(x_adv)
         loss_adv = F.cross_entropy(y_hat_adv, y)
         return loss_adv, y_hat_adv, x_adv
+
+    def square_attack(self, x, y):
+        """
+        Runs a black box square attack with AutoAttack.
+        """
+        adversary = AutoAttack(self, norm='Linf', eps=.3, version='rand')
+        adversary.attacks_to_run = ['square']
+        _, y_hat_adv = adversary.run_standard_evaluation(x, y, return_labels=True)
+        return y_hat_adv
+    
+    def randomized_attacks(self, x, y):
+        """
+        Runs APGD-CE (no restarts, 20 iterations for EoT) and APGD-DLR (no restarts, 20 iterations for EoT),
+        designed especially for randomized attacks.
+        """
+        adversary = AutoAttack(self, norm='Linf', eps=.3, version='rand')
+        adversary.attacks_to_run = ['apgd-ce']
+        _, y_hat_adv_ce = adversary.run_standard_evaluation(x, y, return_labels=True)
+        adversary.attacks_to_run = ['apgd-dlr']
+        _, y_hat_adv_dlr = adversary.run_standard_evaluation(x, y, return_labels=True)
+        return y_hat_adv_ce, y_hat_adv_dlr
+
+
