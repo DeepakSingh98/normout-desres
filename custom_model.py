@@ -4,6 +4,7 @@ from custom_layers.always_dropout import AlwaysDropout
 from custom_layers.normout import NormOut
 from custom_layers.normout_determ import DeterministicNormOut
 from custom_layers.topk import TopK
+from custom_layers.expout import ExpOut
 from models.vgg16_layers import vgg16_layers
 import torch.nn as nn
 
@@ -49,6 +50,8 @@ class CustomModel(BasicLightningModel):
             self.custom_layer = TopK(k=topk_k)
         elif custom_layer_name == "AlwaysDropout":
             self.custom_layer = AlwaysDropout(p=dropout_p)
+        elif custom_layer_name == "ExpOut":
+            self.custom_layer = ExpOut()
         else:
             raise ValueError("custom_layer_name must be 'ReLU', 'NormOut', or 'TopK'")
 
