@@ -1,6 +1,7 @@
 from typing import List
 from base_model import BasicLightningModel
 from custom_layers.always_dropout import AlwaysDropout
+from custom_layers.expout import ExpOut
 from custom_layers.normout import NormOut
 from custom_layers.normout_determ import DeterministicNormOut
 from custom_layers.topk import TopK
@@ -49,6 +50,8 @@ class CustomModel(BasicLightningModel):
             self.custom_layer = TopK(k=topk_k)
         elif custom_layer_name == "AlwaysDropout":
             self.custom_layer = AlwaysDropout(p=dropout_p)
+        elif custom_layer_name == "ExpOut":
+            self.custom_layer = ExpOut()
         else:
             raise ValueError("custom_layer_name must be 'ReLU', 'NormOut', or 'TopK'")
 
@@ -63,7 +66,10 @@ class CustomModel(BasicLightningModel):
             print("Layer replacements:")
             for i in replace_layers:
                 print(f"{layers[i]} at index {i} replaced with {custom_layer_name}")
-                layers[i] = self.custom_layer
+                if custom_layer_name == "NormOut":
+                    layers[i] = NormOut(use_abs, num_id=i)
+                else:
+                    layers[i] = self.custom_layer
                 
         if remove_layers is not None:
             print("Layer removals:")
@@ -75,7 +81,10 @@ class CustomModel(BasicLightningModel):
             print("Layer insertions:")
             for i in insert_layers:
                 print(f"{custom_layer_name} inserted at index {i}")
-                layers.insert(i, self.custom_layer)
+                if custom_layer_name == "NormOut":
+                    layers.insert(i, NormOut(use_abs, num_id=i))
+                else:
+                    layers.insert(i, self.custom_layer)
                 
         self.model = nn.Sequential(*layers)
         self.report_state(model_name, custom_layer_name, insert_layers, self.custom_layer)
