@@ -33,7 +33,7 @@ parser.add_argument("--insert-layers", type=int, nargs="+", default=None, help="
 # NormOut settings
 parser.add_argument("--use-abs", type=bool, default=True, help="Use absolute value of input during NormOut (default True)")
 parser.add_argument("--channel-max", type=bool, default=False, help = "Use channel max ie old buggy version (default False")
-parser.add_argument("--on-at-inference", type=bool, default=False, help="Turn NormOut on at inference time (default False)")
+parser.add_argument("--on-at-inference", type=bool, default=True, help="Turn NormOut on at inference time (default False)")
 parser.add_argument("--normout-delay-epochs", type=int, default=0, help="number of epochs to delay using normout")
 # attacks
 parser.add_argument("--use-adversarial-fgm", type=bool, default=True, help="use adversarial fgm (default True)")

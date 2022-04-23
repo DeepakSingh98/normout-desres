@@ -5,7 +5,7 @@ from custom_layers.custom_layer import Custom_Layer
 
 class ExpOut(nn.Module, Custom_Layer):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         nn.Module.__init__(self)
         Custom_Layer.__init__(self, **kwargs)
 

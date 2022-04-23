@@ -7,7 +7,7 @@ class TopK(nn.Module, Custom_Layer):
     """
     Sets all but the K highest activation values to zero.
     """
-    def __init__(self, k):
+    def __init__(self, k, **kwargs):
         nn.Module.__init__(self)
         Custom_Layer.__init__(self, **kwargs)
         self.k = k
