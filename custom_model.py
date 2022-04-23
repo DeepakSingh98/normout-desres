@@ -3,7 +3,6 @@ from base_model import BasicLightningModel
 from custom_layers.always_dropout import AlwaysDropout
 from custom_layers.expout import ExpOut
 from custom_layers.normout import NormOut
-from custom_layers.normout_determ import DeterministicNormOut
 from custom_layers.topk import TopK
 from custom_layers.expout import ExpOut
 from models.vgg16_layers import vgg16_layers
@@ -24,6 +23,8 @@ class CustomModel(BasicLightningModel):
         use_batch_norm, 
         custom_layer_name, 
         use_abs,
+        channel_max,
+        on_at_inference, 
         dropout_p,
         topk_k,
         remove_layers,
@@ -40,13 +41,9 @@ class CustomModel(BasicLightningModel):
         elif custom_layer_name == "ReLU":
             self.custom_layer = nn.ReLU(True)
         elif custom_layer_name == "NormOut":
-            self.custom_layer = NormOut(use_abs)
-        elif custom_layer_name == "DeterministicNormOut":
-            self.custom_layer = DeterministicNormOut(use_abs)
+            self.custom_layer = NormOut(use_abs, channel_max, on_at_inference)
         elif custom_layer_name == "NormOutBlock":
-            self.custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), NormOut(use_abs), nn.ReLU(True)]
-        elif custom_layer_name == "DetNormOutBlock":
-            self.custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), DeterministicNormOut(use_abs), nn.ReLU(True)]
+            self.custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), NormOut(use_abs, channel_max, on_at_inference), nn.ReLU(True)]
         elif custom_layer_name == "TopK":
             self.custom_layer = TopK(k=topk_k)
         elif custom_layer_name == "AlwaysDropout":
@@ -67,10 +64,8 @@ class CustomModel(BasicLightningModel):
             print("Layer replacements:")
             for i in replace_layers:
                 print(f"{layers[i]} at index {i} replaced with {custom_layer_name}")
-                if custom_layer_name == "NormOut":
-                    layers[i] = NormOut(use_abs, num_id=i)
-                else:
-                    layers[i] = self.custom_layer
+                layers[i] = self.custom_layer
+                self.custom_layer.set_index(i)
                 
         if remove_layers is not None:
             print("Layer removals:")
@@ -82,10 +77,8 @@ class CustomModel(BasicLightningModel):
             print("Layer insertions:")
             for i in insert_layers:
                 print(f"{custom_layer_name} inserted at index {i}")
-                if custom_layer_name == "NormOut":
-                    layers.insert(i, NormOut(use_abs, num_id=i))
-                else:
-                    layers.insert(i, self.custom_layer)
+                layers.insert(i, self.custom_layer)
+                self.custom_layer.set_index(i)
                 
         self.model = nn.Sequential(*layers)
         self.report_state(model_name, custom_layer_name, insert_layers, self.custom_layer)
@@ -103,8 +96,10 @@ class CustomModel(BasicLightningModel):
             print(f"{custom_layer_name} layers in use at indices {insert_layers}")
         print(self.model)
     
+    '''
     def on_train_epoch_end(self) -> None:
         # if epoch == 2 and custom layer is DeterministicNormOut, turn it off
         # TODO: make this a parameter
         if self.current_epoch == 30 and self.custom_layer_name == "DeterministicNormOut":
             self.custom_layer.turn_off()
+    '''

@@ -1,7 +1,14 @@
 import torch
 import torch.nn as nn
 
-class ExpOut(nn.Module):
+from custom_layers.custom_layer import Custom_Layer
+
+class ExpOut(nn.Module, Custom_Layer):
+
+    def __init__(self):
+        nn.Module.__init__(self)
+        Custom_Layer.__init__(self, **kwargs)
+
     def forward(self, x):
         # for each input, we want the max activation of the whole activation tensor
         max_val = torch.zeros(x.shape[0], requires_grad=True).to(x.device)

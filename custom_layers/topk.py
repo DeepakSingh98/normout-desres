@@ -1,12 +1,15 @@
 import torch
 import torch.nn as nn
 
-class TopK(nn.Module):
+from custom_layers.custom_layer import Custom_Layer
+
+class TopK(nn.Module, Custom_Layer):
     """
     Sets all but the K highest activation values to zero.
     """
     def __init__(self, k):
-        super().__init__()
+        nn.Module.__init__(self)
+        Custom_Layer.__init__(self, **kwargs)
         self.k = k
     
     def forward(self, x):

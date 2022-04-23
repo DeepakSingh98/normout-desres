@@ -1,17 +1,25 @@
 import torch
 import torch.nn as nn
 
-class NormOut(nn.Module):
+from custom_layers.custom_layer import Custom_Layer
+
+class NormOut(nn.Module, Custom_Layer):
     """
     Sets ith neurons to zero with probability p_i, where p_i is the activation of the ith neuron divided 
     by the max activation of the layer. When `use_abs` is True, we use the absolute value of the activations 
     instead of the activations themselves.
     """
-    def __init__(self, use_abs: bool, channel_max: bool, off_at_inference: bool):
-        super().__init__()
+    def __init__(self, use_abs: bool,
+                channel_max: bool, 
+                on_at_inference: bool, 
+                **kwargs):
+
+        nn.Module.__init__(self)
+        Custom_Layer.__init__(self, **kwargs)
+
         self.use_abs = use_abs
         self.channel_max = channel_max
-        self.off_at_inference = off_at_inference
+        self.on_at_inference = on_at_inference
 
         if self.use_abs:
             print("Using absolute value of activations in NormOut!")
@@ -25,7 +33,7 @@ class NormOut(nn.Module):
 
         
     def forward(self, x):
-        if self.training or not self.off_at_inference:
+        if self.training or self.on_at_inference:
             if self.use_abs: 
                 x_prime = abs(x)
             else:
