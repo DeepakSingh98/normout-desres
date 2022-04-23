@@ -60,13 +60,6 @@ class CustomModel(BasicLightningModel):
             raise NotImplementedError("model type not implemented")
 
         # perform surgery
-        if self.custom_layer is not None and replace_layers is not None:
-            print("Layer replacements:")
-            for i in replace_layers:
-                print(f"{layers[i]} at index {i} replaced with {custom_layer_name}")
-                layers[i] = self.custom_layer
-                self.custom_layer.set_index(i)
-                
         if remove_layers is not None:
             print("Layer removals:")
             for i in reversed(remove_layers): # Reversed to stop indices getting messed up
@@ -78,6 +71,13 @@ class CustomModel(BasicLightningModel):
             for i in insert_layers:
                 print(f"{custom_layer_name} inserted at index {i}")
                 layers.insert(i, self.custom_layer)
+                self.custom_layer.set_index(i)
+        
+        if self.custom_layer is not None and replace_layers is not None:
+            print("Layer replacements:")
+            for i in replace_layers:
+                print(f"{layers[i]} at index {i} replaced with {custom_layer_name}")
+                layers[i] = self.custom_layer
                 self.custom_layer.set_index(i)
                 
         self.model = nn.Sequential(*layers)
