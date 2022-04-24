@@ -20,9 +20,9 @@ class CustomModel(BasicLightningModel):
     def __init__(
         self, 
         model_name,
-        use_batch_norm, 
+        no_batch_norm, 
         custom_layer_name, 
-        use_abs,
+        no_use_abs,
         channel_max,
         on_at_inference, 
         dropout_p,
@@ -34,6 +34,8 @@ class CustomModel(BasicLightningModel):
     ):
         super().__init__(**kwargs)
         self.custom_layer_name = custom_layer_name
+        self.use_batch_norm = not no_batch_norm
+        self.use_abs = not no_abs
         
         # configure custom layer
         if custom_layer_name is None:
@@ -55,7 +57,7 @@ class CustomModel(BasicLightningModel):
 
         # get model
         if model_name == "VGG16":
-            layers: List[nn.Module] = vgg16_layers(self.num_channels, self.num_classes, use_batch_norm, dropout_p=dropout_p)
+            layers: List[nn.Module] = vgg16_layers(self.num_channels, self.num_classes, self.use_batch_norm, dropout_p=dropout_p)
         else:
             raise NotImplementedError("model type not implemented")
 
