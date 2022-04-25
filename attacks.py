@@ -180,7 +180,7 @@ class Attacks(ABC):
             clean_acc = fb.accuracy(fmodel, images, labels)
             print("Clean Accuracy: ", clean_acc)
             attack = fb.attacks.saltandpepper.SaltAndPepperNoiseAttack()
-            raw_advs, clipped_advs, success = attack(fmodel, images, labels, epsilons=.3)            
+            raw_advs, clipped_advs, success = attack(fmodel, images, labels, epsilons=None)            
             robust_accuracy = 1 - success.sum()/len(success)
             print("Robust Accuracy: ", robust_accuracy.item())
             return robust_accuracy
