@@ -1,5 +1,6 @@
 from abc import ABC
 import numpy as np
+from PIL import Image
 
 from robustbench.eval import benchmark
 from cleverhans.torch.attacks.fast_gradient_method import fast_gradient_method
@@ -8,9 +9,11 @@ from cleverhans.torch.attacks.projected_gradient_descent import (
 )
 
 import torch
+import torchvision.transforms as transforms
 import torch.nn.functional as F
-from autoattack.square import SquareAttack
 from autoattack import AutoAttack
+from foolbox.attacks.saltandpepper import SaltAndPepperNoiseAttack
+import foolbox as fb
 
 class Attacks(ABC):
     """
@@ -24,6 +27,7 @@ class Attacks(ABC):
         no_square_attack,
         no_randomized_attack,
         no_robustbench,
+        no_salt_and_pepper_attack,
         adv_eps,
         pgd_steps,
         # catch other kwargs
@@ -35,6 +39,7 @@ class Attacks(ABC):
         self.use_square_attack = not no_square_attack
         self.use_randomized_attack = not no_randomized_attack
         self.use_robustbench = not no_robustbench
+        self.use_salt_and_pepper_attack = not no_salt_and_pepper_attack
         self.adv_eps = adv_eps
         self.pgd_steps = pgd_steps
 
@@ -112,6 +117,13 @@ class Attacks(ABC):
                     (y_hat_dlr == y).float().mean(),
                 )
 
+            if self.use_salt_and_pepper_attack:
+                robust_accuracy = self.salt_and_pepper_attack(x, y)
+                self.log(
+                    f"Adversarial Salt and Pepper Accuracy \n(eps=.3)",
+                    robust_accuracy,
+                )
+
 
     def pgd_attack(self, x, y):
         """ 
@@ -156,4 +168,29 @@ class Attacks(ABC):
         _, y_hat_adv_dlr = adversary.run_standard_evaluation(x, y, return_labels=True)
         return y_hat_adv_ce, y_hat_adv_dlr
 
-
+    def salt_and_pepper_attack(self, x, y):
+        """
+        Uses Foolbox to perform a salt and pepper attack.
+        """
+        # get images and don't use dataloaders
+        if self.dset_name == "CIFAR10":
+            preprocessing = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
+            fmodel = fb.PyTorchModel(self, bounds=(0, 1), preprocessing=preprocessing)
+            images, labels = fb.utils.samples(fmodel, dataset='cifar10', batchsize=16, data_format='channels_first', bounds=(0, 1))
+            clean_acc = fb.accuracy(fmodel, images, labels)
+            print("Clean Accuracy: ", clean_acc)
+            attack = fb.attacks.saltandpepper.SaltAndPepperNoiseAttack()
+            raw_advs, clipped_advs, success = attack(fmodel, images, labels, epsilons=.3)
+            # save a sample adv to check to "adv_samples/salt_and_pepper_attack.png"
+            adv_img = clipped_advs[0]
+            adv_img = adv_img.transpose(1, 2, 0)
+            adv_img = adv_img.detach().cpu().numpy()
+            adv_img = np.clip(adv_img, 0, 1)
+            adv_img = (adv_img * 255).astype(np.uint8)
+            Image.fromarray(adv_img).save("salt_and_pepper_attack.png")
+            
+            robust_accuracy = 1 - success.float32().mean(axis=-1)
+            print("Robust Accuracy: ", robust_accuracy)
+            return robust_accuracy
+        else:
+            raise NotImplementedError("Salt and pepper attack not implemented for this dataset.")

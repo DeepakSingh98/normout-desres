@@ -23,6 +23,8 @@ class CustomLayer(ABC):
             sparsity_vector = (x == 0).sum(dim=1)/x.shape[1]
         elif len(x.shape) == 4:
             sparsity_vector = (x == 0).sum(dim=(1,2,3))/(x.shape[1]*x.shape[2]*x.shape[3])
+        else:
+            raise ValueError("Sparsity can only be computed for 2D or 4D tensors")
         wandb.log({f"{self.custom_layer_name} {self.num_id} Sparsity": sparsity_vector}, commit=False)
         wandb.log({f"{self.custom_layer_name} {self.num_id} Sparsity Mean": sparsity_vector.mean()}, commit=False)
     
