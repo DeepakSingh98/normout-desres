@@ -9,10 +9,9 @@ from cleverhans.torch.attacks.projected_gradient_descent import (
 )
 
 import torch
-import torchvision.transforms as transforms
 import torch.nn.functional as F
 from autoattack import AutoAttack
-from foolbox.attacks.saltandpepper import SaltAndPepperNoiseAttack
+import torchvision.transforms as trans
 import foolbox as fb
 
 class Attacks(ABC):
@@ -175,8 +174,8 @@ class Attacks(ABC):
         # get images and don't use dataloaders
         if self.dset_name == "CIFAR10":
             import ipdb; ipdb.set_trace()
-            # preprocessing = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
-            fmodel = fb.PyTorchModel(self, bounds=(0, 1))
+            preprocessing = trans.Compose([trans.ToTensor(), trans.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
+            fmodel = fb.PyTorchModel(self, bounds=(0, 1), preprocessing=preprocessing)
             images, labels = fb.utils.samples(fmodel, dataset='cifar10', batchsize=16, data_format='channels_first', bounds=(0, 1))
             clean_acc = fb.accuracy(fmodel, images, labels)
             print("Clean Accuracy: ", clean_acc)
