@@ -1,6 +1,6 @@
 from typing import List
 from base_model import BasicLightningModel
-from custom_layers.always_dropout import AlwaysDropout
+from custom_layers.custom_dropout import CustomDropout
 from custom_layers.custom_layer import CustomLayer
 from custom_layers.expout import ExpOut
 from custom_layers.normout import NormOut
@@ -50,8 +50,8 @@ class CustomModel(BasicLightningModel):
             self.custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), NormOut(use_abs, max_type, on_at_inference), nn.ReLU(True)]
         elif custom_layer_name == "TopK":
             self.custom_layer = TopK(k=topk_k)
-        elif custom_layer_name == "AlwaysDropout":
-            self.custom_layer = AlwaysDropout(p=dropout_p)
+        elif custom_layer_name == "Dropout":
+            self.custom_layer = CustomDropout(dropout_p, on_at_inference)
         elif custom_layer_name == "ExpOut":
             self.custom_layer = ExpOut()
         else:

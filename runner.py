@@ -24,7 +24,7 @@ parser.add_argument("--weight-decay", type=float, default=0.0001, help="weight d
 parser.add_argument("--custom-tag", type=str, default=None, help="custom tag to be added to wandb log")
 # model settings
 parser.add_argument("--model-name", type=str, default="VGG16", help="model name (default VGG16)")
-parser.add_argument("--custom-layer-name", type=str, default=None, help="custom layer (default None, supports 'ReLU', 'NormOut', 'AlwaysDropout', 'DeterministicNormOut', 'NormOutBlock', 'DetNormOutBlock , and 'TopK')")
+parser.add_argument("--custom-layer-name", type=str, default=None, help="custom layer (default None, supports 'ReLU', 'NormOut', 'Dropout', 'DeterministicNormOut', 'NormOutBlock', 'DetNormOutBlock , and 'TopK')")
 parser.add_argument("--topk-k", type=int, default=10, help="k value for TopK")
 parser.add_argument("--dropout-p", type=float, default=0.5, help="p value for Dropout (probability of neuron being dropped)")
 parser.add_argument("--no-batch-norm", default=False, action="store_true", help="Don't use batch norm (default False)")
@@ -34,7 +34,7 @@ parser.add_argument("--insert-layers", type=int, nargs="+", default=None, help="
 # NormOut settings
 parser.add_argument("--no-abs", default=False, action="store_true", help="Don't use absolute value of input during NormOut (default False)")
 parser.add_argument("--max-type", type=str, default="spatial", help="Type of max to use in NormOut (default spatial, supports channel, global)")
-parser.add_argument("--on-at-inference", default=False, action="store_true", help="Turn NormOut on at inference time (default False)")
+parser.add_argument("--on-at-inference", default=False, action="store_true", help="Turn layer on at inference time (default False)")
 parser.add_argument("--normout-delay-epochs", type=int, default=0, help="number of epochs to delay using normout")
 # attacks
 parser.add_argument("--no-fgm", default=False, action="store_true", help="Don't use adversarial fgm (default False)")

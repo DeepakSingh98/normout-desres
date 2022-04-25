@@ -15,7 +15,7 @@ class NormOut(nn.Module, CustomLayer):
                 **kwargs):
 
         nn.Module.__init__(self)
-        CustomLayer.__init__(self, custom_layer_name="NormOut")
+        CustomLayer.__init__(self, custom_layer_name="NormOut", use_abs=use_abs, max_type=max_type)
 
         self.use_abs = use_abs
         self.max_type = max_type
@@ -46,7 +46,7 @@ class NormOut(nn.Module, CustomLayer):
             if self.max_type == "spatial":
                 x_prime_max = torch.max(x_prime, dim=2, keepdim=True)[0]
                 x_prime_max = torch.max(x_prime_max, dim=3, keepdim=True)[0]
-                norm_x = x_prime / x_prime
+                norm_x = x_prime / x_prime_max
             elif self.max_type == "channel":
                 norm_x = x_prime / torch.max(x_prime, dim=1, keepdim=True)[0]
             elif self.max_type == 'global':
@@ -59,5 +59,6 @@ class NormOut(nn.Module, CustomLayer):
 
             x_mask = torch.rand_like(x) < norm_x
             x = x * x_mask
+            x = x / (norm_x + 10e-8) # Inverted NormOut scaling
         self.log_sparsity(x)
         return x
