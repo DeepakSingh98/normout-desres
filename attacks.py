@@ -174,22 +174,15 @@ class Attacks(ABC):
         """
         # get images and don't use dataloaders
         if self.dset_name == "CIFAR10":
-            preprocessing = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
-            fmodel = fb.PyTorchModel(self, bounds=(0, 1), preprocessing=preprocessing)
+            import ipdb; ipdb.set_trace()
+            # preprocessing = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
+            fmodel = fb.PyTorchModel(self, bounds=(0, 1))
             images, labels = fb.utils.samples(fmodel, dataset='cifar10', batchsize=16, data_format='channels_first', bounds=(0, 1))
             clean_acc = fb.accuracy(fmodel, images, labels)
             print("Clean Accuracy: ", clean_acc)
             attack = fb.attacks.saltandpepper.SaltAndPepperNoiseAttack()
-            raw_advs, clipped_advs, success = attack(fmodel, images, labels, epsilons=.3)
-            # save a sample adv to check to "adv_samples/salt_and_pepper_attack.png"
-            adv_img = clipped_advs[0]
-            adv_img = adv_img.transpose(1, 2, 0)
-            adv_img = adv_img.detach().cpu().numpy()
-            adv_img = np.clip(adv_img, 0, 1)
-            adv_img = (adv_img * 255).astype(np.uint8)
-            Image.fromarray(adv_img).save("salt_and_pepper_attack.png")
-            
-            robust_accuracy = 1 - success.float32().mean(axis=-1)
+            raw_advs, clipped_advs, success = attack(fmodel, images, labels, epsilons=.3)            
+            robust_accuracy = 1 - success.sum()/len(success)
             print("Robust Accuracy: ", robust_accuracy)
             return robust_accuracy
         else:
