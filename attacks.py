@@ -30,11 +30,11 @@ class Attacks(ABC):
         **kwargs
     ):
         # set attributes
-        self.use_adversarial_fgm = use_adversarial_fgm
-        self.use_adversarial_pgd = use_adversarial_pgd
-        self.use_square_attack = use_square_attack
-        self.use_randomized_attacks = use_randomized_attacks
-        self.use_robustbench = use_robustbench
+        self.use_adversarial_fgm = not no_fgm
+        self.use_adversarial_pgd = not no_pgd
+        self.use_square_attack = not no_square_attack
+        self.use_randomized_attacks = not no_randomized_attacks
+        self.use_robustbench = not no_robustbench
         self.adv_eps = adv_eps
         self.pgd_steps = pgd_steps
 

@@ -22,10 +22,10 @@ class CustomModel(BasicLightningModel):
     def __init__(
         self, 
         model_name,
-        use_batch_norm, 
+        no_batch_norm, 
         custom_layer_name, 
-        use_abs,
-        channel_max,
+        no_use_abs,
+        no_channel_max,
         on_at_inference, 
         dropout_p,
         topk_k,
@@ -36,6 +36,9 @@ class CustomModel(BasicLightningModel):
     ):
         super().__init__(**kwargs)
         self.custom_layer_name = custom_layer_name
+        use_batch_norm = not no_batch_norm
+        use_abs = not no_abs
+        channel_max = not no_channel_max
         
         # configure custom layer
         if custom_layer_name is None:

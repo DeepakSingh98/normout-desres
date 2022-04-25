@@ -21,7 +21,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         batch_size,
         num_workers,
         dset_name,
-        use_cifar_data_augmentation,
+        no_data_augmentation,
         # optimizer
         optimizer,
         lr,
@@ -38,7 +38,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.dset_name = dset_name
-        self.use_data_augmentation = use_cifar_data_augmentation
+        self.use_data_augmentation = not no_data_augmentation
         self.optimizer = optimizer
         self.lr = lr
         self.weight_decay = weight_decay
