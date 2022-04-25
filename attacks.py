@@ -29,6 +29,7 @@ class Attacks(ABC):
         no_salt_and_pepper_attack,
         adv_eps,
         pgd_steps,
+        all_attacks_off,
         # catch other kwargs
         **kwargs
     ):
@@ -41,6 +42,15 @@ class Attacks(ABC):
         self.use_salt_and_pepper_attack = not no_salt_and_pepper_attack
         self.adv_eps = adv_eps
         self.pgd_steps = pgd_steps
+
+        if all_attacks_off:
+            self.use_adversarial_fgm = False
+            self.use_adversarial_pgd = False
+            self.use_square_attack = False
+            self.use_randomized_attack = False
+            self.use_robustbench = False
+            self.use_salt_and_pepper_attack = False
+
 
     def on_validation_epoch_end(self):
         """

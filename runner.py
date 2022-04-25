@@ -37,6 +37,7 @@ parser.add_argument("--max-type", type=str, default="spatial", help="Type of max
 parser.add_argument("--on-at-inference", default=False, action="store_true", help="Turn layer on at inference time (default False)")
 parser.add_argument("--normout-delay-epochs", type=int, default=0, help="number of epochs to delay using normout")
 # attacks
+parser.add_argument("--all-attacks-off", default=False, action="store_true", help="Turn all attacks off (default False)")
 parser.add_argument("--no-fgm", default=False, action="store_true", help="Don't use adversarial fgm (default False)")
 parser.add_argument("--no-pgd", default=False, action="store_true", help="Don't use adversarial pgd (default False)")
 parser.add_argument("--no-square-attack", default=False, action="store_true", help="Don't use square attack (default False)")

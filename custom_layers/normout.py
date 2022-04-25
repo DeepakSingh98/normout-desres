@@ -66,7 +66,7 @@ class NormOut(nn.Module, CustomLayer):
 
             x_mask = torch.rand_like(x) < norm_x
             x = x * x_mask
-            x = x / (norm_x + 10e-8) # Inverted NormOut scaling
+            #x = x / (norm_x + 10e-8) # Inverted NormOut scaling
         if self.log_sparsity_bool:
             self.log_sparsity(x)
         return x
