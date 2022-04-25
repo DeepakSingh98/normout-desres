@@ -19,11 +19,11 @@ class Attacks(ABC):
 
     def __init__(
         self,
-        use_adversarial_fgm,
-        use_adversarial_pgd,
-        use_square_attack,
-        use_randomized_attacks,
-        use_robustbench,
+        no_fgm,
+        no_pgd,
+        no_square_attack,
+        no_randomized_attack,
+        no_robustbench,
         adv_eps,
         pgd_steps,
         # catch other kwargs
@@ -33,7 +33,7 @@ class Attacks(ABC):
         self.use_adversarial_fgm = not no_fgm
         self.use_adversarial_pgd = not no_pgd
         self.use_square_attack = not no_square_attack
-        self.use_randomized_attacks = not no_randomized_attacks
+        self.use_randomized_attack = not no_randomized_attack
         self.use_robustbench = not no_robustbench
         self.adv_eps = adv_eps
         self.pgd_steps = pgd_steps

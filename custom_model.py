@@ -22,7 +22,7 @@ class CustomModel(BasicLightningModel):
         model_name,
         no_batch_norm, 
         custom_layer_name, 
-        no_use_abs,
+        no_abs,
         no_channel_max,
         on_at_inference, 
         dropout_p,
