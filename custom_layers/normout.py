@@ -10,7 +10,7 @@ class NormOut(nn.Module, CustomLayer):
     instead of the activations themselves.
     """
     def __init__(self, use_abs: bool,
-                standard_max: bool, 
+                max_type: str, 
                 on_at_inference: bool, 
                 **kwargs):
 
@@ -18,7 +18,7 @@ class NormOut(nn.Module, CustomLayer):
         CustomLayer.__init__(self, custom_layer_name="NormOut")
 
         self.use_abs = use_abs
-        self.standard_max = standard_max
+        self.max_type = max_type
         self.on_at_inference = on_at_inference
 
         if self.use_abs:
@@ -26,12 +26,16 @@ class NormOut(nn.Module, CustomLayer):
         else:
             print("Not using absolute value of activations in NormOut!")
 
-        if self.standard_max:
-            print("Using standard max in NormOut!")
+        if self.max_type == "spatial":
+            print("Taking max across pixels per channel!")
+        elif self.max_type == "channel":
+            print("Taking max across channels per pixel!")
+        elif self.max_type == "global":
+            print("Taking max across both channels and pixels!")
         else:
-            print("Using buggy max in NormOut!")
+            raise NotImplementedError("NormOut max type not implemented")
 
-        
+
     def forward(self, x):
         if self.training or self.on_at_inference:
             if self.use_abs: 
@@ -39,10 +43,19 @@ class NormOut(nn.Module, CustomLayer):
             else:
                 x_prime = x
 
-            if self.standard_max:
+            if self.max_type == "spatial":
+                x_prime_max = torch.max(x_prime, dim=2, keepdim=True)[0]
+                x_prime_max = torch.max(x_prime_max, dim=3, keepdim=True)[0]
+                norm_x = x_prime / x_prime
+            elif self.max_type == "channel":
                 norm_x = x_prime / torch.max(x_prime, dim=1, keepdim=True)[0]
+            elif self.max_type == 'global':
+                x_prime_max = torch.max(x_prime, dim=1, keepdim=True)[0]
+                x_prime_max = torch.max(x_prime, dim=2, keepdim=True)[0]
+                x_prime_max = torch.max(x_prime_max, dim=3, keepdim=True)[0]
+                norm_x = x_prime / x_prime_max
             else:
-                norm_x = x_prime / torch.max(x_prime, dim=1, keepdim=True)
+                raise NotImplementedError("NormOut max type not implemented")
 
             x_mask = torch.rand_like(x) < norm_x
             x = x * x_mask

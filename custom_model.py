@@ -25,7 +25,7 @@ class CustomModel(BasicLightningModel):
         no_batch_norm, 
         custom_layer_name, 
         no_abs,
-        no_standard_max,
+        max_type,
         on_at_inference, 
         dropout_p,
         topk_k,
@@ -38,7 +38,6 @@ class CustomModel(BasicLightningModel):
         self.custom_layer_name = custom_layer_name
         use_batch_norm = not no_batch_norm
         use_abs = not no_abs
-        standard_max = not no_standard_max
         
         # configure custom layer
         if custom_layer_name is None:
@@ -46,9 +45,9 @@ class CustomModel(BasicLightningModel):
         elif custom_layer_name == "ReLU":
             self.custom_layer = nn.ReLU(True)
         elif custom_layer_name == "NormOut":
-            self.custom_layer = NormOut(use_abs, standard_max, on_at_inference)
+            self.custom_layer = NormOut(use_abs, max_type, on_at_inference)
         elif custom_layer_name == "NormOutBlock":
-            self.custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), NormOut(use_abs, standard_max, on_at_inference), nn.ReLU(True)]
+            self.custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), NormOut(use_abs, max_type, on_at_inference), nn.ReLU(True)]
         elif custom_layer_name == "TopK":
             self.custom_layer = TopK(k=topk_k)
         elif custom_layer_name == "AlwaysDropout":
