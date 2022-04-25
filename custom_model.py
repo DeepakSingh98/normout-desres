@@ -52,7 +52,7 @@ class CustomModel(BasicLightningModel):
         elif custom_layer_name == "NormOutBlock":
             self.custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), NormOut(use_abs, max_type, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats), nn.ReLU(True)]
         elif custom_layer_name == "TopK":
-            self.custom_layer = TopK(k=topk_k)
+            self.custom_layer = TopK(topk_k, on_at_inference, log_input_stats, log_sparsity)
         elif custom_layer_name == "Dropout":
             self.custom_layer = CustomDropout(dropout_p, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         elif custom_layer_name == "ExpOut":
