@@ -18,8 +18,7 @@
 
 ### Example Usage
 - To run a baseline VGG16: `python runner.py`
-- To run VGG16 with Abs NormOut layers replacing both layers 47 and 48, as well as 50 and 51 (both of which are (ReLU, Dropout) pairs): `python runner.py --custom-layer-name NormOut --replace-layers 47 50 --remove-layers 48 51`
-- To run VGG16 with all ReLU and BatchNorm layers replaced with NormOut: `python runner.py --custom-layer-name NormOut --replace-layers 1 3 6 8 11 13 15 18 20 22 25 27 29 34 37 --remove-layers 35 38 --custom-tag AllNormOut --batch-norm False`
+- To run VGG16 with NormOut layers replacing the Dropout layers in the classifier: `python runner.py --custom-layer-name NormOut --replace-layers 48 51`
 
 
 ### HMS O2 Interactive Usage
