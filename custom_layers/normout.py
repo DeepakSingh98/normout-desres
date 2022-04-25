@@ -37,6 +37,7 @@ class NormOut(nn.Module, CustomLayer):
 
 
     def forward(self, x):
+        self.log_input_stats(x)
         if self.training or self.on_at_inference:
             if self.use_abs: 
                 x_prime = abs(x)

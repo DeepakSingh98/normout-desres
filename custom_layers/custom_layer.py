@@ -28,34 +28,39 @@ class CustomLayer(ABC):
         wandb.log({f"{self.custom_layer_name} {self.num_id} Sparsity": sparsity_vector}, commit=False)
         wandb.log({f"{self.custom_layer_name} {self.num_id} Sparsity Mean": sparsity_vector.mean()}, commit=False)
     
-    '''
-    
     def log_input_stats(self, x: torch.Tensor):
-        if self.training or self.on_at_inference:
-            if self.use_abs: 
-                x_prime = abs(x)
-            else:
-                x_prime = x
 
-            if self.max_type == "spatial":
-                x_prime_max = torch.max(x_prime, dim=2, keepdim=True)[0]
-                x_prime_mean = torch.max(x_prime_max, dim=3, keepdim=True)[0]
-                x_prime_mean = torch.max(x_prime, dim=2, keepdim=True)[0]
-                x_prime_min = torch.max(x_prime_max, dim=3, keepdim=True)[0]
-                x_prime_min = torch.max(x_prime, dim=2, keepdim=True)[0]
-                x_prime_max = torch.max(x_prime_max, dim=3, keepdim=True)[0]
-
-                x_prime_mean = torch.mean(x_prime, dim=2)
-                x_prime_min
-                norm_x = x_prime / x_prime_max
-            elif self.max_type == "channel":
-                norm_x = x_prime / torch.max(x_prime, dim=1, keepdim=True)[0]
-            elif self.max_type == 'global':
-                x_prime_max = torch.max(x_prime, dim=1, keepdim=True)[0]
-                x_prime_max = torch.max(x_prime, dim=2, keepdim=True)[0]
-                x_prime_max = torch.max(x_prime_max, dim=3, keepdim=True)[0]
-                norm_x = x_prime / x_prime_max
-            else:
-                raise NotImplementedError("NormOut max type not implemented")
-    
-    '''
+        if self.max_type == "spatial":
+            x_max = torch.max(x, dim=2, keepdim=True)[0]
+            x_max = torch.max(x_max, dim=3, keepdim=True)[0]
+            x_mean = torch.mean(x, dim=2, keepdim=True)
+            x_mean = torch.mean(x_mean, dim=3, keepdim=True)
+            x_min = torch.min(x, dim=2, keepdim=True)[0]
+            x_min = torch.min(x_min, dim=3, keepdim=True)[0]
+            x_std = torch.std(x, dim=2, keepdim=True)
+            x_std = torch.std(x_std, dim=3, keepdim=True)
+        elif self.max_type == "channel":
+            x_max = torch.max(x, dim=1, keepdim=True)[0]
+            x_mean = torch.mean(x, dim=1, keepdim=True)
+            x_min = torch.min(x, dim=1, keepdim=True)[0]
+            x_std = torch.std(x, dim=1, keepdim=True)
+        elif self.max_type == 'global':
+            x_max = torch.max(x, dim=1, keepdim=True)[0]
+            x_max = torch.max(x_max, dim=2, keepdim=True)[0]
+            x_max = torch.max(x_max, dim=3, keepdim=True)[0]
+            x_mean = torch.mean(x, dim=1, keepdim=True)
+            x_mean = torch.mean(x_mean, dim=2, keepdim=True)
+            x_mean = torch.mean(x_mean, dim=3, keepdim=True)
+            x_min = torch.min(x, dim=1, keepdim=True)[0]
+            x_min = torch.min(x_min, dim=2, keepdim=True)[0]
+            x_min = torch.min(x_min, dim=3, keepdim=True)[0]
+            x_std = torch.std(x, dim=1, keepdim=True)
+            x_std = torch.std(x_std, dim=2, keepdim=True)
+            x_std = torch.std(x_std, dim=3, keepdim=True)
+        else:
+            raise NotImplementedError("NormOut max type not implemented")
+            
+        wandb.log({f"{self.custom_layer_name} {self.num_id} Input mean": x_mean}, commit=False)
+        wandb.log({f"{self.custom_layer_name} {self.num_id} Input min": x_min}, commit=False)
+        wandb.log({f"{self.custom_layer_name} {self.num_id} Input max": x_max}, commit=False)
+        wandb.log({f"{self.custom_layer_name} {self.num_id} Input std dev": x_std}, commit=False)

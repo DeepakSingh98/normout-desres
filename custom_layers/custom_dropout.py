@@ -15,10 +15,10 @@ class CustomDropout(nn.Module, CustomLayer):
         self.dropout = nn.Dropout(p)
 
     def forward(self, x):
+        self.log_input_stats(x)
         if self.training or self.on_at_inference:
             x_mask = torch.rand_like(x) < self.p
             x = x * x_mask
             x = x / self.p
             self.log_sparsity(x)
-        else:
-            return x
+        return x
