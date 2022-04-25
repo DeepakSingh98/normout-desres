@@ -33,7 +33,7 @@ parser.add_argument("--remove-layers", type=int, nargs="+", default=None, help="
 parser.add_argument("--insert-layers", type=int, nargs="+", default=None, help="layer indices at which a custom layer is inserted (NOTE: happens after removal)")
 # NormOut settings
 parser.add_argument("--no-abs", default=False, action="store_true", help="Don't use absolute value of input during NormOut (default False)")
-parser.add_argument("--max-type", typer=str, default="spatial", help="Type of max to use in NormOut (default spatial, supports channel, global)")
+parser.add_argument("--max-type", type=str, default="spatial", help="Type of max to use in NormOut (default spatial, supports channel, global)")
 parser.add_argument("--on-at-inference", default=False, action="store_true", help="Turn NormOut on at inference time (default False)")
 parser.add_argument("--normout-delay-epochs", type=int, default=0, help="number of epochs to delay using normout")
 # attacks
@@ -42,7 +42,7 @@ parser.add_argument("--no-pgd", default=False, action="store_true", help="Don't 
 parser.add_argument("--no-square-attack", default=False, action="store_true", help="Don't use square attack (default False)")
 parser.add_argument("--no-randomized-attack", default=False, action="store_true", help="Don't use randomized attacks (default False)")
 parser.add_argument("--no-robustbench", default=False, action="store_true", help="Don't use robustbench autoattack (default False)")
-parser.add_argument("no-salt-and-pepper-attack", default=False, action="store_true", help="Don't use salt and pepper attack (default False)")
+parser.add_argument("--no-salt-and-pepper-attack", default=False, action="store_true", help="Don't use salt and pepper attack (default False)")
 parser.add_argument("--adv-eps", type=float, default=0.03, help="adversarial epsilon (default 0.03)")
 parser.add_argument("--pgd-steps", type=int, default=10, help="number of steps for PGD (default 10)")
 args = parser.parse_args()
