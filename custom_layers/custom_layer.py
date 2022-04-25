@@ -31,14 +31,14 @@ class CustomLayer(ABC):
     def log_input_stats(self, x: torch.Tensor):
 
         if self.max_type == "spatial":
-            x_max = torch.max(x, dim=2, keepdim=True)[0]
-            x_max = torch.max(x_max, dim=3, keepdim=True)[0]
-            x_mean = torch.mean(x, dim=2, keepdim=True)
-            x_mean = torch.mean(x_mean, dim=3, keepdim=True)
-            x_min = torch.min(x, dim=2, keepdim=True)[0]
-            x_min = torch.min(x_min, dim=3, keepdim=True)[0]
-            x_std = torch.std(x, dim=2, keepdim=True)
-            x_std = torch.std(x_std, dim=3, keepdim=True)
+            x_max = torch.max(x, dim=-2, keepdim=True)[0]
+            x_max = torch.max(x_max, dim=-1, keepdim=True)[0]
+            x_mean = torch.mean(x, dim=-2, keepdim=True)
+            x_mean = torch.mean(x_mean, dim=-1, keepdim=True)
+            x_min = torch.min(x, dim=-2, keepdim=True)[0]
+            x_min = torch.min(x_min, dim=-1, keepdim=True)[0]
+            x_std = torch.std(x, dim=-2, keepdim=True)
+            x_std = torch.std(x_std, dim=-1, keepdim=True)
         elif self.max_type == "channel":
             x_max = torch.max(x, dim=1, keepdim=True)[0]
             x_mean = torch.mean(x, dim=1, keepdim=True)

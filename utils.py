@@ -15,6 +15,10 @@ def set_tags(args):
         tags.append("DataAug")
     if not args.no_abs and args.custom_layer_name == "NormOut":
         tags.append(f'use-abs')
+    if args.custom_layer_name == "NormOut":
+        tags.append(f"{args.max_type}")
+    if (args.custom_layer_name == "NormOut" or args.custom_layer_name == "Dropout") and args.on_at_inference:
+        tags.append("on-at-inference")
     if args.custom_layer_name is not None and args.replace_layers is not None:
         tags.append(f"Layers at {args.replace_layers} replaced with {args.custom_layer_name}")
     if args.custom_layer_name is not None and args.insert_layers is not None:

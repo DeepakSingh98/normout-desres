@@ -32,12 +32,15 @@ class CustomModel(BasicLightningModel):
         remove_layers,
         insert_layers,
         replace_layers,
+        no_log_sparsity,
+        log_input_stats,
         **kwargs
     ):
         super().__init__(**kwargs)
         self.custom_layer_name = custom_layer_name
         use_batch_norm = not no_batch_norm
         use_abs = not no_abs
+        log_sparsity = not no_log_sparsity
         
         # configure custom layer
         if custom_layer_name is None:
@@ -45,13 +48,13 @@ class CustomModel(BasicLightningModel):
         elif custom_layer_name == "ReLU":
             self.custom_layer = nn.ReLU(True)
         elif custom_layer_name == "NormOut":
-            self.custom_layer = NormOut(use_abs, max_type, on_at_inference)
+            self.custom_layer = NormOut(use_abs, max_type, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         elif custom_layer_name == "NormOutBlock":
-            self.custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), NormOut(use_abs, max_type, on_at_inference), nn.ReLU(True)]
+            self.custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), NormOut(use_abs, max_type, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats), nn.ReLU(True)]
         elif custom_layer_name == "TopK":
             self.custom_layer = TopK(k=topk_k)
         elif custom_layer_name == "Dropout":
-            self.custom_layer = CustomDropout(dropout_p, on_at_inference)
+            self.custom_layer = CustomDropout(dropout_p, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         elif custom_layer_name == "ExpOut":
             self.custom_layer = ExpOut()
         else:

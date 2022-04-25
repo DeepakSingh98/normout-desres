@@ -12,6 +12,8 @@ class NormOut(nn.Module, CustomLayer):
     def __init__(self, use_abs: bool,
                 max_type: str, 
                 on_at_inference: bool, 
+                log_sparsity_bool: bool,
+                log_input_stats_bool: bool,
                 **kwargs):
 
         nn.Module.__init__(self)
@@ -20,6 +22,8 @@ class NormOut(nn.Module, CustomLayer):
         self.use_abs = use_abs
         self.max_type = max_type
         self.on_at_inference = on_at_inference
+        self.log_sparsity_bool = log_sparsity_bool
+        self.log_input_stats_bool = log_input_stats_bool
 
         if self.use_abs:
             print("Using absolute value of activations in NormOut!")
@@ -37,7 +41,9 @@ class NormOut(nn.Module, CustomLayer):
 
 
     def forward(self, x):
-        self.log_input_stats(x)
+
+        if self.log_input_stats_bool:
+            self.log_input_stats(x)
         if self.training or self.on_at_inference:
             if self.use_abs: 
                 x_prime = abs(x)
@@ -45,8 +51,8 @@ class NormOut(nn.Module, CustomLayer):
                 x_prime = x
 
             if self.max_type == "spatial":
-                x_prime_max = torch.max(x_prime, dim=2, keepdim=True)[0]
-                x_prime_max = torch.max(x_prime_max, dim=3, keepdim=True)[0]
+                x_prime_max = torch.max(x_prime, dim=-2, keepdim=True)[0]
+                x_prime_max = torch.max(x_prime_max, dim=-1, keepdim=True)[0]
                 norm_x = x_prime / x_prime_max
             elif self.max_type == "channel":
                 norm_x = x_prime / torch.max(x_prime, dim=1, keepdim=True)[0]
@@ -61,5 +67,6 @@ class NormOut(nn.Module, CustomLayer):
             x_mask = torch.rand_like(x) < norm_x
             x = x * x_mask
             x = x / (norm_x + 10e-8) # Inverted NormOut scaling
-        self.log_sparsity(x)
+        if self.log_sparsity_bool:
+            self.log_sparsity(x)
         return x
