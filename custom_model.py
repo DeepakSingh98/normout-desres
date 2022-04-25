@@ -1,12 +1,14 @@
 from typing import List
 from base_model import BasicLightningModel
 from custom_layers.always_dropout import AlwaysDropout
+from custom_layers.custom_layer import CustomLayer
 from custom_layers.expout import ExpOut
 from custom_layers.normout import NormOut
 from custom_layers.topk import TopK
 from custom_layers.expout import ExpOut
 from models.vgg16_layers import vgg16_layers
 import torch.nn as nn
+import copy
 
 class CustomModel(BasicLightningModel):
     """
@@ -69,19 +71,27 @@ class CustomModel(BasicLightningModel):
         if self.custom_layer is not None and insert_layers is not None:
             print("Layer insertions:")
             for i in insert_layers:
-                print(f"{custom_layer_name} inserted at index {i}")
-                layers.insert(i, self.custom_layer)
-                self.custom_layer.set_index(i)
+                self.insert_custom_layer(layers, i)
         
         if self.custom_layer is not None and replace_layers is not None:
             print("Layer replacements:")
             for i in replace_layers:
-                print(f"{layers[i]} at index {i} replaced with {custom_layer_name}")
-                layers[i] = self.custom_layer
-                self.custom_layer.set_index(i)
+                self.replace_custom_layer(layers, i)
                 
         self.model = nn.Sequential(*layers)
         self.report_state(model_name, custom_layer_name, insert_layers, self.custom_layer)
+
+    def replace_custom_layer(self, layers, i):
+        print(f"{layers[i]} at index {i} replaced with {self.custom_layer_name}")
+        layer = copy.copy(self.custom_layer)
+        layer.set_index(i)
+        layers[i] = layer
+
+    def insert_custom_layer(self, layers, i):
+        print(f"{self.custom_layer_name} inserted at index {i}")
+        layer = copy.copy(self.custom_layer)
+        layer.set_index(i)
+        layers.insert(i, layer)
 
     def forward(self, x):
         x = self.model(x)
@@ -95,11 +105,3 @@ class CustomModel(BasicLightningModel):
         if custom_layer is not None:
             print(f"{custom_layer_name} layers in use at indices {insert_layers}")
         print(self.model)
-    
-    '''
-    def on_train_epoch_end(self) -> None:
-        # if epoch == 2 and custom layer is DeterministicNormOut, turn it off
-        # TODO: make this a parameter
-        if self.current_epoch == 30 and self.custom_layer_name == "DeterministicNormOut":
-            self.custom_layer.turn_off()
-    '''

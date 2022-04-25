@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 
-from custom_layers.custom_layer import Custom_Layer
+from custom_layers.custom_layer import CustomLayer
 
-class NormOut(nn.Module, Custom_Layer):
+class NormOut(nn.Module, CustomLayer):
     """
     Sets ith neurons to zero with probability p_i, where p_i is the activation of the ith neuron divided 
     by the max activation of the layer. When `use_abs` is True, we use the absolute value of the activations 
@@ -15,7 +15,7 @@ class NormOut(nn.Module, Custom_Layer):
                 **kwargs):
 
         nn.Module.__init__(self)
-        Custom_Layer.__init__(self, **kwargs)
+        CustomLayer.__init__(self, custom_layer_name="NormOut")
 
         self.use_abs = use_abs
         self.channel_max = channel_max
@@ -46,5 +46,5 @@ class NormOut(nn.Module, Custom_Layer):
 
             x_mask = torch.rand_like(x) < norm_x
             x = x * x_mask
-        
+        self.log_sparsity(x)
         return x
