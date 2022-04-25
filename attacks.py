@@ -101,7 +101,7 @@ class Attacks(ABC):
                     (y_hat_adv_square == y).float().mean(),
                 )
             
-            if self.use_randomized_attacks:
+            if self.use_randomized_attack:
                 y_hat_ce, y_hat_dlr = self.randomized_attacks(x, y)
                 self.log(
                     f"Randomized CE Accuracy \n(eps=.3, norm=inf)",
