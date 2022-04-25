@@ -40,6 +40,7 @@ class CustomModel(BasicLightningModel):
     ):
         super().__init__(**kwargs)
         self.custom_layer_name = custom_layer_name
+        self.pretrained = pretrained
         use_batch_norm = not no_batch_norm
         use_abs = not no_abs
         log_sparsity = not no_log_sparsity
@@ -76,7 +77,7 @@ class CustomModel(BasicLightningModel):
             "wide_resnet50_2",
             "wide_resnet101_2"
             ]:
-            layers = resnet_layers(model_name, pretrained)
+            layers = resnet_layers(model_name, pretrained, self.num_classes)
         else:
             raise NotImplementedError("model type not implemented")
 
@@ -121,6 +122,8 @@ class CustomModel(BasicLightningModel):
         Useful logging.
         """
         print(f"Model is {model_name}!")
+        if self.pretrained:
+            print("Using pretrained model!")
         if custom_layer is not None:
             print(f"{custom_layer_name} layers in use at indices {insert_layers}")
         print(self.model)
