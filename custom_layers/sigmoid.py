@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from custom_layer import CustomLayer
+from custom_layers.custom_layer import CustomLayer
 
 class Sigmoid(nn.Module, CustomLayer):
 
