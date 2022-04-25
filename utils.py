@@ -11,6 +11,8 @@ def set_tags(args):
             tags.append(f"k_{str(args.topk_k)}")
     if args.custom_tag:
         tags.append(args.custom_tag)
+    if args.pretrained:
+        tags.append("pretrained")
     if not args.no_data_augmentation:
         tags.append("DataAug")
     if not args.no_abs and args.custom_layer_name == "NormOut":

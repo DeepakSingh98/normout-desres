@@ -6,6 +6,7 @@ from custom_layers.expout import ExpOut
 from custom_layers.normout import NormOut
 from custom_layers.topk import TopK
 from custom_layers.sigmoid import Sigmoid
+from models.resnet_layers import resnet_layers
 from models.vgg16_layers import vgg16_layers
 import torch.nn as nn
 import copy
@@ -22,6 +23,7 @@ class CustomModel(BasicLightningModel):
     def __init__(
         self, 
         model_name,
+        pretrained,
         no_batch_norm, 
         custom_layer_name, 
         no_abs,
@@ -63,6 +65,18 @@ class CustomModel(BasicLightningModel):
         # get model
         if model_name == "VGG16":
             layers: List[nn.Module] = vgg16_layers(self.num_channels, self.num_classes, use_batch_norm, dropout_p=dropout_p)
+        elif model_name in [
+            "resnet18",
+            "resnet34",
+            "resnet50",
+            "resnet101",
+            "resnet152",
+            "resnext50_32x4d",
+            "resnext101_32x8d",
+            "wide_resnet50_2",
+            "wide_resnet101_2"
+            ]:
+            layers = resnet_layers(model_name, pretrained)
         else:
             raise NotImplementedError("model type not implemented")
 
