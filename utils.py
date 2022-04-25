@@ -11,7 +11,7 @@ def set_tags(args):
             tags.append(f"k_{str(args.topk_k)}")
     if args.custom_tag:
         tags.append(args.custom_tag)
-    if not args.no_ifar_data_augmentation:
+    if not args.no_data_augmentation:
         tags.append("DataAug")
     if not args.not_abs and args.custom_layer_name == "NormOut":
         tags.append(f'use-abs')
