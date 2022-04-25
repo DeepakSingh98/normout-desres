@@ -32,7 +32,7 @@ parser.add_argument("--remove-layers", type=int, nargs="+", default=None, help="
 parser.add_argument("--insert-layers", type=int, nargs="+", default=None, help="layer indices at which a custom layer is inserted (NOTE: happens after removal)")
 # NormOut settings
 parser.add_argument("--no-abs", default=True, action="store_true", help="Don't use absolute value of input during NormOut (default False)")
-parser.add_argument("--channel-max", type=bool, default=False, help = "Use channel max ie old buggy version (default False")
+parser.add_argument("--no-channel-max", default=False, action="store_true", help = "Don't use channel max ie old buggy version (default True")
 parser.add_argument("--on-at-inference", default=False, action="store_true", help="Turn NormOut on at inference time (default False)")
 parser.add_argument("--normout-delay-epochs", type=int, default=0, help="number of epochs to delay using normout")
 # attacks
