@@ -5,7 +5,7 @@ from custom_layers.custom_layer import CustomLayer
 from custom_layers.expout import ExpOut
 from custom_layers.normout import NormOut
 from custom_layers.topk import TopK
-from custom_layers.expout import ExpOut
+from custom_layers.sigmoid import Sigmoid
 from models.vgg16_layers import vgg16_layers
 import torch.nn as nn
 import copy
@@ -49,8 +49,8 @@ class CustomModel(BasicLightningModel):
             self.custom_layer = nn.ReLU(True)
         elif custom_layer_name == "NormOut":
             self.custom_layer = NormOut(use_abs, max_type, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
-        elif custom_layer_name == "NormOutBlock":
-            self.custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), NormOut(use_abs, max_type, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats), nn.ReLU(True)]
+        elif custom_layer_name == "Sigmoid":
+            custom_layer_name = Sigmoid(log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         elif custom_layer_name == "TopK":
             self.custom_layer = TopK(topk_k, on_at_inference, log_input_stats, log_sparsity)
         elif custom_layer_name == "Dropout":
