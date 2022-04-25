@@ -42,7 +42,7 @@ parser.add_argument("--no-fgm", default=False, action="store_true", help="Don't 
 parser.add_argument("--no-pgd", default=False, action="store_true", help="Don't use adversarial pgd (default False)")
 parser.add_argument("--no-square-attack", default=False, action="store_true", help="Don't use square attack (default False)")
 parser.add_argument("--no-randomized-attack", default=False, action="store_true", help="Don't use randomized attacks (default False)")
-parser.add_argument("--no-robustbench", default=True, action="store_true", help="Don't use robustbench autoattack (default False)")
+parser.add_argument("--no-robustbench", default=False, action="store_true", help="Don't use robustbench autoattack (default False)")
 parser.add_argument("--no-salt-and-pepper-attack", default=False, action="store_true", help="Don't use salt and pepper attack (default False)")
 parser.add_argument("--adv-eps", type=float, default=0.03, help="adversarial epsilon (default 0.03)")
 parser.add_argument("--pgd-steps", type=int, default=10, help="number of steps for PGD (default 10)")
