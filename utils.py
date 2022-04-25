@@ -13,7 +13,7 @@ def set_tags(args):
         tags.append(args.custom_tag)
     if not args.no_data_augmentation:
         tags.append("DataAug")
-    if not args.not_abs and args.custom_layer_name == "NormOut":
+    if not args.no_abs and args.custom_layer_name == "NormOut":
         tags.append(f'use-abs')
     if args.custom_layer_name is not None and args.replace_layers is not None:
         tags.append(f"Layers at {args.replace_layers} replaced with {args.custom_layer_name}")
