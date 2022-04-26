@@ -10,11 +10,9 @@ from cleverhans.torch.attacks.projected_gradient_descent import (
 
 import torch
 import torch.nn.functional as F
-import torchmetrics
 import torchvision
 import torchvision.transforms as transforms
 from autoattack import AutoAttack
-import torchvision.transforms as trans
 import foolbox as fb
 
 class Attacks(ABC):
@@ -61,10 +59,6 @@ class Attacks(ABC):
         """
         if self.current_epoch % 10 == 0:
 
-            # get validation data (TODO: currently uses just one batch.)
-            # batch = next(iter(self.val_dataloader())) 
-            # x, y = batch
-
             self.set_preprocess_during_forward(True)
 
             transform_list = [transforms.ToTensor()]
@@ -72,6 +66,7 @@ class Attacks(ABC):
             item = torchvision.datasets.CIFAR10(root="./data", train=False, transform=transform_chain, download=True)
             test_loader = torch.utils.data.DataLoader(item, batch_size=256, shuffle=False, num_workers=self.num_workers)
             
+            # TODO: currently uses just one batch.
             x, y = next(iter(test_loader))
 
             x = x.to(self.device); y = y.to(self.device)
@@ -88,7 +83,6 @@ class Attacks(ABC):
                                                   eps=8/255,
                                                   n_examples=40,
                                                   device=self.device,
-                                                  preprocessing=self.plain_transforms,
                                                   ) # TODO: do more than just 40 examples during final evaluation. Is .copy() sketchy?
                 print("RobustBench Clean Accuracy: ", clean_acc)
                 print("RobustBench Robust Accuracy: ", robust_acc)
@@ -109,6 +103,7 @@ class Attacks(ABC):
                     f"Adversarial FGM Accuracy \n(eps={self.adv_eps}, norm=inf)",
                     (y_hat_adv_fgm.argmax(dim=1) == y).float().mean(),
                 )
+                print("Adversarial FGM Accuracy: ", (y_hat_adv_fgm.argmax(dim=1) == y).float().mean())
 
             if self.use_adversarial_pgd:
                 loss_adv_pgd, y_hat_adv_pgd, _ = self.pgd_attack(x, y)
@@ -120,6 +115,7 @@ class Attacks(ABC):
                     f"Adversarial PGD Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
                     (y_hat_adv_pgd.argmax(dim=1) == y).float().mean(),
                 )
+                print("Adversarial PGD Accuracy: ", (y_hat_adv_pgd.argmax(dim=1) == y).float().mean())
 
             if self.use_square_attack:
                 y_hat_adv_square = self.square_attack(x, y)
@@ -127,6 +123,7 @@ class Attacks(ABC):
                     f"Adversarial Square Accuracy \n(eps=.3, norm=inf)",
                     (y_hat_adv_square == y).float().mean(),
                 )
+                print("Adversarial Square Accuracy: ", (y_hat_adv_square == y).float().mean())  
             
             if self.use_randomized_attack:
                 y_hat_ce, y_hat_dlr = self.randomized_attacks(x, y)
@@ -138,6 +135,8 @@ class Attacks(ABC):
                     f"Randomized DLR Accuracy \n(eps=.3, norm=inf)",
                     (y_hat_dlr == y).float().mean(),
                 )
+                print("Randomized CE Accuracy: ", (y_hat_ce == y).float().mean())
+                print("Randomized DLR Accuracy: ", (y_hat_dlr == y).float().mean())
 
             if self.use_salt_and_pepper_attack:
                 robust_accuracy = self.salt_and_pepper_attack(x, y)
@@ -145,6 +144,7 @@ class Attacks(ABC):
                     f"Adversarial Salt and Pepper Accuracy \n(eps=.3)",
                     robust_accuracy,
                 )
+                print("Adversarial Salt and Pepper Accuracy: ", robust_accuracy)
             
             self.set_preprocess_during_forward(False)
 
@@ -198,17 +198,14 @@ class Attacks(ABC):
         """
         # get images and don't use dataloaders
         if self.dset_name == "CIFAR10":
-            print("Running Salt and Pepper Attack")
             preprocessing = dict(mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010], axis=-3)
             self.set_preprocess_during_forward(False)
             fmodel = fb.PyTorchModel(self, bounds=(0, 1), preprocessing=preprocessing)
             images, labels = fb.utils.samples(fmodel, dataset='cifar10', batchsize=16, data_format='channels_first', bounds=(0, 1))
             clean_acc = fb.accuracy(fmodel, images, labels)
-            print("Clean Accuracy: ", clean_acc)
             attack = fb.attacks.saltandpepper.SaltAndPepperNoiseAttack()
             raw_advs, clipped_advs, success = attack(fmodel, images, labels, epsilons=None)            
             robust_accuracy = 1 - success.sum()/len(success)
-            print("Robust Accuracy: ", robust_accuracy.item())
             self.set_preprocess_during_forward(True)
             return robust_accuracy
         else:
