@@ -57,10 +57,20 @@ class Attacks(ABC):
         `pytorch_lightning` hook override to insert attacks at end of val epoch.
         """
         if self.current_epoch % 10 == 0:
-           
+
             # get validation data (TODO: currently uses just one batch.)
-            batch = next(iter(self.val_dataloader())) 
-            x, y = batch
+            # batch = next(iter(self.val_dataloader())) 
+            # x, y = batch
+            transform_list = [transforms.ToTensor()]
+            transform_chain = transforms.Compose(transform_list)
+            item = datasets.CIFAR10(root="./data", train=False, transform=transform_chain, download=True)
+            test_loader = data.DataLoader(item, batch_size=1000, shuffle=False, num_workers=0)
+            
+            l = [x for (x, y) in test_loader]
+            x = torch.cat(l, 0)
+            l = [y for (x, y) in test_loader]
+            y = torch.cat(l, 0)
+
             x = x.to(self.device); y = y.to(self.device)
 
             # for pgd attack, need to backpropogate to input.
