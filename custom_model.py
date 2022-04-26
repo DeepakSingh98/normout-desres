@@ -5,7 +5,8 @@ from custom_layers.custom_layer import CustomLayer
 from custom_layers.expout import ExpOut
 from custom_layers.normout import NormOut
 from custom_layers.topk import TopK
-from custom_layers.expout import ExpOut
+from custom_layers.sigmoid import Sigmoid
+from models.resnet_layers import resnet_layers
 from models.vgg16_layers import vgg16_layers
 import torch.nn as nn
 import copy
@@ -22,6 +23,7 @@ class CustomModel(BasicLightningModel):
     def __init__(
         self, 
         model_name,
+        pretrained,
         no_batch_norm, 
         custom_layer_name, 
         no_abs,
@@ -38,6 +40,8 @@ class CustomModel(BasicLightningModel):
     ):
         super().__init__(**kwargs)
         self.custom_layer_name = custom_layer_name
+        self.pretrained = pretrained
+        self.preprocess_during_forward = False
         use_batch_norm = not no_batch_norm
         use_abs = not no_abs
         log_sparsity = not no_log_sparsity
@@ -49,8 +53,8 @@ class CustomModel(BasicLightningModel):
             self.custom_layer = nn.ReLU(True)
         elif custom_layer_name == "NormOut":
             self.custom_layer = NormOut(use_abs, max_type, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
-        elif custom_layer_name == "NormOutBlock":
-            self.custom_layer = [nn.Conv2d(self.num_channels, 64, 3, 1), NormOut(use_abs, max_type, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats), nn.ReLU(True)]
+        elif custom_layer_name == "Sigmoid":
+            custom_layer_name = Sigmoid(log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         elif custom_layer_name == "TopK":
             self.custom_layer = TopK(topk_k, on_at_inference, log_input_stats, log_sparsity)
         elif custom_layer_name == "Dropout":
@@ -63,6 +67,18 @@ class CustomModel(BasicLightningModel):
         # get model
         if model_name == "VGG16":
             layers: List[nn.Module] = vgg16_layers(self.num_channels, self.num_classes, use_batch_norm, dropout_p=dropout_p)
+        elif model_name in [
+            "resnet18",
+            "resnet34",
+            "resnet50",
+            "resnet101",
+            "resnet152",
+            "resnext50_32x4d",
+            "resnext101_32x8d",
+            "wide_resnet50_2",
+            "wide_resnet101_2"
+            ]:
+            layers = resnet_layers(model_name, pretrained, self.num_classes)
         else:
             raise NotImplementedError("model type not implemented")
 
@@ -98,7 +114,12 @@ class CustomModel(BasicLightningModel):
         layer.set_index(i)
         layers.insert(i, layer)
 
+    def set_preprocess_during_forward(self, state: bool):
+        self.preprocess_during_forward = state
+
     def forward(self, x):
+        if self.preprocess_during_forward:
+            x = self.plain_transforms(x)
         x = self.model(x)
         return x
 
@@ -107,6 +128,8 @@ class CustomModel(BasicLightningModel):
         Useful logging.
         """
         print(f"Model is {model_name}!")
+        if self.pretrained:
+            print("Using pretrained model!")
         if custom_layer is not None:
             print(f"{custom_layer_name} layers in use at indices {insert_layers}")
         print(self.model)
