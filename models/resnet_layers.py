@@ -17,9 +17,9 @@ def resnet_layers(model_name: str, pretrained: bool, num_classes: int, **kwargs)
         model = resnets.resnet101(pretrained, num_classes=num_classes)
     elif model_name == "resnet152":
         model = resnets.resnet152(pretrained, num_classes=num_classes)
-    elif model_name == "resnext50_32x4d":
+    elif model_name == "resnet50_32x4d":
         model = resnets.resnet50_32x4d(pretrained, num_classes=num_classes)
-    elif model_name == "resnext101_32x8d":
+    elif model_name == "resnet101_32x8d":
         model = resnets.resnet101_32x8(pretrained, num_classes=num_classes)
     elif model_name == "wide_resnet50_2":
         model = resnets.wide_resnet50_2(pretrained, num_classes=num_classes)
