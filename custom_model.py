@@ -67,7 +67,7 @@ class CustomModel(BasicLightningModel):
             raise ValueError("custom_layer_name must be 'ReLU', 'NormOut', or 'TopK'")
         
         already_sequential = False
-        using_robustbench = False
+        self.using_robustbench = False
 
         # get model
         if model_name == "VGG16":
@@ -89,7 +89,7 @@ class CustomModel(BasicLightningModel):
             ]:
             self.model = robustbench_model(model_name)
             already_sequential = True
-            using_robustbench = True
+            self.using_robustbench = True
         else:
             raise NotImplementedError("model type not implemented")
 
@@ -130,7 +130,7 @@ class CustomModel(BasicLightningModel):
         self.preprocess_during_forward = state
 
     def forward(self, x):
-        if self.preprocess_during_forward and not using_robustbench:
+        if self.preprocess_during_forward and not self.using_robustbench:
             x = transforms.Normalize(self.pretrained_means, self.pretrained_stds)(x)
         x = self.model(x)
         return x
