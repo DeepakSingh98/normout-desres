@@ -10,6 +10,9 @@ from cleverhans.torch.attacks.projected_gradient_descent import (
 
 import torch
 import torch.nn.functional as F
+import torchmetrics
+import torchvision
+import torchvision.transforms as transforms
 from autoattack import AutoAttack
 import torchvision.transforms as trans
 import foolbox as fb
@@ -61,10 +64,13 @@ class Attacks(ABC):
             # get validation data (TODO: currently uses just one batch.)
             # batch = next(iter(self.val_dataloader())) 
             # x, y = batch
+
+            self.set_preprocess_during_forward(True)
+
             transform_list = [transforms.ToTensor()]
             transform_chain = transforms.Compose(transform_list)
-            item = datasets.CIFAR10(root="./data", train=False, transform=transform_chain, download=True)
-            test_loader = data.DataLoader(item, batch_size=1000, shuffle=False, num_workers=0)
+            item = torchvision.datasets.CIFAR10(root="./data", train=False, transform=transform_chain, download=True)
+            test_loader = torch.utils.data.DataLoader(item, batch_size=1000, shuffle=False, num_workers=0)
             
             l = [x for (x, y) in test_loader]
             x = torch.cat(l, 0)
@@ -142,6 +148,8 @@ class Attacks(ABC):
                     f"Adversarial Salt and Pepper Accuracy \n(eps=.3)",
                     robust_accuracy,
                 )
+            
+            self.set_preprocess_during_forward(False)
 
 
     def pgd_attack(self, x, y):

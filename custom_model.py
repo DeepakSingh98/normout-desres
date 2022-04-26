@@ -41,6 +41,7 @@ class CustomModel(BasicLightningModel):
         super().__init__(**kwargs)
         self.custom_layer_name = custom_layer_name
         self.pretrained = pretrained
+        self.preprocess_during_forward = False
         use_batch_norm = not no_batch_norm
         use_abs = not no_abs
         log_sparsity = not no_log_sparsity
@@ -113,7 +114,12 @@ class CustomModel(BasicLightningModel):
         layer.set_index(i)
         layers.insert(i, layer)
 
+    def set_preprocess_during_forward(self, state: bool):
+        self.preprocess_during_forward = state
+
     def forward(self, x):
+        if self.preprocess_during_forward:
+            x = self.plain_transforms(x)
         x = self.model(x)
         return x
 
