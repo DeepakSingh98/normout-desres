@@ -57,6 +57,7 @@ class NormOut(nn.Module, CustomLayer):
             elif self.max_type == "channel":
                 norm_x = x_prime / torch.max(x_prime, dim=1, keepdim=True)[0]
             elif self.max_type == 'global':
+                assert len(x.shape) == 4, "NormOut max type 'global' only implemented for 4D tensors. Use 'channel' or 'spatial' instead."
                 x_prime_max = torch.max(x_prime, dim=1, keepdim=True)[0]
                 x_prime_max = torch.max(x_prime, dim=2, keepdim=True)[0]
                 x_prime_max = torch.max(x_prime_max, dim=3, keepdim=True)[0]
