@@ -8,6 +8,7 @@ from custom_layers.topk import TopK
 from custom_layers.sigmoid import Sigmoid
 from models.resnet_layers import resnet_layers
 from models.vgg16_layers import vgg16_layers
+import torchvision.transforms as transforms
 import torch.nn as nn
 import copy
 
@@ -119,7 +120,7 @@ class CustomModel(BasicLightningModel):
 
     def forward(self, x):
         if self.preprocess_during_forward:
-            x = self.plain_transforms(x)
+            x = transforms.Normalize(self.pretrained_means, self.pretrained_stds)(x)
         x = self.model(x)
         return x
 

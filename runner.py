@@ -1,6 +1,5 @@
 import argparse
 from datetime import datetime
-from tkinter import FALSE
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning import Trainer
 

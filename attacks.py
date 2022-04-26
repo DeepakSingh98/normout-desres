@@ -70,12 +70,9 @@ class Attacks(ABC):
             transform_list = [transforms.ToTensor()]
             transform_chain = transforms.Compose(transform_list)
             item = torchvision.datasets.CIFAR10(root="./data", train=False, transform=transform_chain, download=True)
-            test_loader = torch.utils.data.DataLoader(item, batch_size=1000, shuffle=False, num_workers=0)
+            test_loader = torch.utils.data.DataLoader(item, batch_size=256, shuffle=False, num_workers=self.num_workers)
             
-            l = [x for (x, y) in test_loader]
-            x = torch.cat(l, 0)
-            l = [y for (x, y) in test_loader]
-            y = torch.cat(l, 0)
+            x, y = next(iter(test_loader))
 
             x = x.to(self.device); y = y.to(self.device)
 
@@ -203,6 +200,7 @@ class Attacks(ABC):
         if self.dset_name == "CIFAR10":
             print("Running Salt and Pepper Attack")
             preprocessing = dict(mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010], axis=-3)
+            self.set_preprocess_during_forward(False)
             fmodel = fb.PyTorchModel(self, bounds=(0, 1), preprocessing=preprocessing)
             images, labels = fb.utils.samples(fmodel, dataset='cifar10', batchsize=16, data_format='channels_first', bounds=(0, 1))
             clean_acc = fb.accuracy(fmodel, images, labels)
@@ -211,6 +209,7 @@ class Attacks(ABC):
             raw_advs, clipped_advs, success = attack(fmodel, images, labels, epsilons=None)            
             robust_accuracy = 1 - success.sum()/len(success)
             print("Robust Accuracy: ", robust_accuracy.item())
+            self.set_preprocess_during_forward(True)
             return robust_accuracy
         else:
             raise NotImplementedError("Salt and pepper attack not implemented for this dataset.")
