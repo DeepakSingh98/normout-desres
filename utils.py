@@ -27,4 +27,6 @@ def set_tags(args):
         tags.append(f"{args.custom_layer_name} layers at {','.join([str(i) for i in args.insert_layers])}")
     if args.remove_layers is not None:
         tags.append(f"Layers removed from indices {args.remove_layers}")
+    if not args.no_pgd:
+        tags.append(f"pgd steps: {args.pgd_steps}")
     return tags
