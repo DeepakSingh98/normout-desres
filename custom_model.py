@@ -7,6 +7,7 @@ from custom_layers.normout import NormOut
 from custom_layers.topk import TopK
 from custom_layers.sigmoid import Sigmoid
 from models.resnet_layers import resnet_layers
+from models.robustbench_model import robustbench_model
 from models.vgg16_layers import vgg16_layers
 import torchvision.transforms as transforms
 import torch.nn as nn
@@ -64,6 +65,8 @@ class CustomModel(BasicLightningModel):
             self.custom_layer = ExpOut()
         else:
             raise ValueError("custom_layer_name must be 'ReLU', 'NormOut', or 'TopK'")
+        
+        already_sequential = False
 
         # get model
         if model_name == "VGG16":
@@ -80,6 +83,11 @@ class CustomModel(BasicLightningModel):
             "wide_resnet101_2"
             ]:
             layers = resnet_layers(model_name, pretrained, self.num_classes)
+        elif model_name in [
+            "Carmon2019Unlabeled"
+            ]:
+            self.model = robustbench_model(model_name)
+            already_sequential = True
         else:
             raise NotImplementedError("model type not implemented")
 
@@ -99,8 +107,9 @@ class CustomModel(BasicLightningModel):
             print("Layer replacements:")
             for i in replace_layers:
                 self.replace_custom_layer(layers, i)
-                
-        self.model = nn.Sequential(*layers)
+
+        if not already_sequential:        
+            self.model = nn.Sequential(*layers)
         self.report_state(model_name, custom_layer_name, insert_layers, self.custom_layer)
 
     def replace_custom_layer(self, layers, i):
