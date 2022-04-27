@@ -1,4 +1,5 @@
 from abc import ABC
+from pickle import FALSE
 import numpy as np
 from PIL import Image
 
@@ -25,7 +26,8 @@ class Attacks(ABC):
     def __init__(
         self,
         no_fgm,
-        no_pgd,
+        no_pgd_ce,
+        no_pgd_t,
         no_square_attack,
         no_randomized_attack,
         no_robustbench,
@@ -40,7 +42,8 @@ class Attacks(ABC):
     ):
         # set attributes
         self.use_adversarial_fgm = not no_fgm
-        self.use_adversarial_pgd = not no_pgd
+        self.use_adversarial_pgd_ce = not no_pgd_ce
+        self.use_adversarial_pgd_t = not no_pgd_t
         self.use_square_attack = not no_square_attack
         self.use_randomized_attack = not no_randomized_attack
         self.use_robustbench = not no_robustbench
@@ -52,7 +55,8 @@ class Attacks(ABC):
 
         if all_attacks_off:
             self.use_adversarial_fgm = False
-            self.use_adversarial_pgd = False
+            self.use_adversarial_pgd_ce = False
+            self.use_adversarial_pgd_t = False
             self.use_square_attack = False
             self.use_randomized_attack = False
             self.use_robustbench = False
@@ -122,17 +126,29 @@ class Attacks(ABC):
                 )
                 print("Adversarial FGM Accuracy: ", (y_hat_adv_fgm.argmax(dim=1) == y).float().mean())
 
-            if self.use_adversarial_pgd:
-                loss_adv_pgd, y_hat_adv_pgd, _ = self.pgd_attack(x, y)
+            if self.use_adversarial_pgd_ce:
+                loss_adv_pgd, y_hat_adv_pgd, _ = self.untargeted_pgd_attack(x, y)
                 self.log(
-                    f"Adversarial PGD Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
+                    f"Adversarial PGD-CE Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
                     loss_adv_pgd,
                 )
                 self.log(
-                    f"Adversarial PGD Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
+                    f"Adversarial PGD-CE Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
                     (y_hat_adv_pgd.argmax(dim=1) == y).float().mean(),
                 )
-                print("Adversarial PGD Accuracy: ", (y_hat_adv_pgd.argmax(dim=1) == y).float().mean())
+                print("Adversarial PGD-CE Accuracy: ", (y_hat_adv_pgd.argmax(dim=1) == y).float().mean())
+            
+            if self.use_adversarial_pgd_t:
+                loss_adv_pgd, y_hat_adv_pgd, _ = self.targeted_pgd_attack(x, y)
+                self.log(
+                    f"Adversarial PGD-T Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
+                    loss_adv_pgd,
+                )
+                self.log(
+                    f"Adversarial PGD-T Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
+                    (y_hat_adv_pgd.argmax(dim=1) == y).float().mean(),
+                )
+                print("Adversarial PGD-T Accuracy: ", (y_hat_adv_pgd.argmax(dim=1) == y).float().mean())
 
             if self.use_square_attack:
                 y_hat_adv_square = self.square_attack(x, y)
@@ -166,13 +182,26 @@ class Attacks(ABC):
             self.set_preprocess_during_forward(False)
 
 
-    def pgd_attack(self, x, y):
+    def untargeted_pgd_attack(self, x, y):
         """ 
-        Performs a projected gradient descent attack on the model as described in
+        Performs an untargeted projected gradient descent attack on the model as described in
         https://arxiv.org/abs/1706.06083
         """
         x_adv = projected_gradient_descent(
             self, x, self.adv_eps, 0.007, self.pgd_steps, np.inf
+        )
+        y_hat_adv = self(x_adv)
+        loss_adv = F.cross_entropy(y_hat_adv, y)
+        return loss_adv, y_hat_adv, x_adv
+    
+    def targeted_pgd_attack(self, x, y):
+        """ 
+        Performs a targeted projected gradient descent attack on the model as described in
+        https://arxiv.org/abs/1706.06083
+        """
+        y_target = (y + 1) % self.num_classes
+        x_adv = projected_gradient_descent(
+            self, x, self.adv_eps, 0.007, self.pgd_steps, np.inf, y=y_target, targeted=True
         )
         y_hat_adv = self(x_adv)
         loss_adv = F.cross_entropy(y_hat_adv, y)
