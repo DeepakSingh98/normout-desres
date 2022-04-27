@@ -7,6 +7,8 @@ from cleverhans.torch.attacks.fast_gradient_method import fast_gradient_method
 from cleverhans.torch.attacks.projected_gradient_descent import (
     projected_gradient_descent,
 )
+from robustbench.data import load_cifar10c
+from robustbench.utils import clean_accuracy
 
 import torch
 import torch.nn.functional as F
@@ -28,6 +30,8 @@ class Attacks(ABC):
         no_randomized_attack,
         no_robustbench,
         no_salt_and_pepper_attack,
+        corruption_types,
+        corruption_severity,
         adv_eps,
         pgd_steps,
         all_attacks_off,
@@ -43,6 +47,8 @@ class Attacks(ABC):
         self.use_salt_and_pepper_attack = not no_salt_and_pepper_attack
         self.adv_eps = adv_eps
         self.pgd_steps = pgd_steps
+        self.corruption_types = corruption_types
+        self.corruption_severity = corruption_severity
 
         if all_attacks_off:
             self.use_adversarial_fgm = False
@@ -61,19 +67,30 @@ class Attacks(ABC):
 
             self.set_preprocess_during_forward(True)
 
-            transform_list = [transforms.ToTensor()]
-            transform_chain = transforms.Compose(transform_list)
-            item = torchvision.datasets.CIFAR10(root="./data", train=False, transform=transform_chain, download=True)
-            test_loader = torch.utils.data.DataLoader(item, batch_size=256, shuffle=False, num_workers=self.num_workers)
+            if self.corruption_types is not None:
+                x, y = load_cifar10c(n_examples=256, corruptions=self.corruption_types, severity=self.corruption_severity)
             
-            # TODO: currently uses just one batch.
-            x, y = next(iter(test_loader))
+            else:
+                transform_list = [transforms.ToTensor()]
+                transform_chain = transforms.Compose(transform_list)
+                item = torchvision.datasets.CIFAR10(root="./data", train=False, transform=transform_chain, download=True)
+                test_loader = torch.utils.data.DataLoader(item, batch_size=256, shuffle=False, num_workers=self.num_workers)
+                
+                # TODO: currently uses just one batch.
+                x, y = next(iter(test_loader))
 
             x = x.to(self.device); y = y.to(self.device)
 
             # for pgd attack, need to backpropogate to input.
             torch.set_grad_enabled(True)
             x.requires_grad = True
+
+            if self.corruption_types is not None:
+                acc = clean_accuracy(self, x, y)
+                print(f'Model: {self.model_name}, CIFAR-10-C accuracy: {acc:.1%}')
+                self.log(
+                    f"Corruption Accuracy with corruptions={self.corruption_types}, severity={self.corruption_severity}: ", acc
+                )
 
             if self.use_robustbench:
                 print("Evaluating RobustBenchmark...")

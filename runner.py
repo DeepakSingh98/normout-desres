@@ -46,6 +46,8 @@ parser.add_argument("--no-robustbench", default=False, action="store_true", help
 parser.add_argument("--no-salt-and-pepper-attack", default=False, action="store_true", help="Don't use salt and pepper attack (default False)")
 parser.add_argument("--adv-eps", type=float, default=0.03, help="adversarial epsilon (default 0.03)")
 parser.add_argument("--pgd-steps", type=int, default=10, help="number of steps for PGD (default 10)")
+parser.add_argument("--corruption-types", type=str, nargs="+", default=None, help="type of corruption to add (supports shot_noise, motion_blur, snow, pixelate, gaussian_noise, defocus_blur, brightness, fog, zoom_blur, frost, glass_blur, impulse_noise, contrast, jpeg_compression, elastic_transform")
+parser.add_argument("--corruption-severity", type=int, default=1, help="Severity of corruption, supports ints 1 through 5 (default 1)")
 # logging
 parser.add_argument("--no-log-sparsity", default=False, action="store_true", help="Don't log sparsity (default False")
 parser.add_argument("--log-input-stats", default=False, action="store_true", help="Log input stats (default False)")

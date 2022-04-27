@@ -44,6 +44,7 @@ class CustomModel(BasicLightningModel):
         self.custom_layer_name = custom_layer_name
         self.pretrained = pretrained
         self.preprocess_during_forward = False
+        self.model_name = model_name
         use_batch_norm = not no_batch_norm
         use_abs = not no_abs
         log_sparsity = not no_log_sparsity
@@ -85,7 +86,8 @@ class CustomModel(BasicLightningModel):
             ]:
             layers = resnet_layers(model_name, pretrained, self.num_classes)
         elif model_name in [
-            "Carmon2019Unlabeled"
+            "Carmon2019Unlabeled",
+            "Standard"
             ]:
             self.model = robustbench_model(model_name)
             already_sequential = True
