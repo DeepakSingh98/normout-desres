@@ -28,6 +28,8 @@ class Attacks(ABC):
         no_fgm,
         no_pgd_ce,
         no_pgd_t,
+        no_fab,
+        no_fab_t,
         no_square_attack,
         no_randomized_attack,
         no_robustbench,
@@ -44,6 +46,8 @@ class Attacks(ABC):
         self.use_adversarial_fgm = not no_fgm
         self.use_adversarial_pgd_ce = not no_pgd_ce
         self.use_adversarial_pgd_t = not no_pgd_t
+        self.use_fab_attack = not no_fab
+        self.use_fab_t_attack = not no_fab_t
         self.use_square_attack = not no_square_attack
         self.use_randomized_attack = not no_randomized_attack
         self.use_robustbench = not no_robustbench
@@ -128,6 +132,8 @@ class Attacks(ABC):
 
             if self.use_adversarial_pgd_ce:
                 loss_adv_pgd, y_hat_adv_pgd, _ = self.untargeted_pgd_attack(x, y)
+                print(f'Ground truth label: {y[0]}')
+                print(f'Prediction post attack: {y_hat_adv_pgd[0]}')
                 self.log(
                     f"Adversarial PGD-CE Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
                     loss_adv_pgd,
@@ -139,16 +145,46 @@ class Attacks(ABC):
                 print("Adversarial PGD-CE Accuracy: ", (y_hat_adv_pgd.argmax(dim=1) == y).float().mean())
             
             if self.use_adversarial_pgd_t:
-                loss_adv_pgd, y_hat_adv_pgd, _ = self.targeted_pgd_attack(x, y)
+                for i in range(10):
+                    loss_adv_pgd, y_hat_adv_pgd, _ = self.targeted_pgd_attack(x, y, i)
+                    print(f'Ground truth label: {y[0]}')
+                    print(f'Adversary targeting class {i}')
+                    print(f'Prediction post attack: {y_hat_adv_pgd[0]}')
+                    '''
+                    self.log(
+                        f"Adversarial PGD-T Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
+                        loss_adv_pgd,
+                    )
+                    self.log(
+                        f"Adversarial PGD-T for Target Class {i} Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
+                        (y_hat_adv_pgd.argmax(dim=1) == y).float().mean(),
+                    )
+                    '''
+                    print(f"Adversarial PGD-T for Target Class {i} Accuracy: ", (y_hat_adv_pgd.argmax(dim=1) == y).float().mean())
+            
+            if self.use_fab_attack:
+                loss_adv_fab, y_hat_adv_fab, _ = self.untargeted_fab_attack(x, y)
                 self.log(
-                    f"Adversarial PGD-T Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
-                    loss_adv_pgd,
-                )
+                        f"Adversarial Untargeted FAB Loss \n(eps={self.adv_eps}, norm=inf)",
+                        loss_adv_fab,
+                    )
                 self.log(
-                    f"Adversarial PGD-T Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
-                    (y_hat_adv_pgd.argmax(dim=1) == y).float().mean(),
-                )
-                print("Adversarial PGD-T Accuracy: ", (y_hat_adv_pgd.argmax(dim=1) == y).float().mean())
+                        f"Adversarial Untargeted FAB Accuracy \n(eps={self.adv_eps}, norm=inf)",
+                        (y_hat_adv_fab.argmax(dim=1) == y).float().mean(),
+                    )
+                print(f"Adversarial Untargeted FAB Accuracy: ", (y_hat_adv_fab.argmax(dim=1) == y).float().mean())
+            
+            if self.use_fab_t_attack:
+                loss_adv_fab, y_hat_adv_fab, _ = self.targeted_fab_attack(x, y)
+                self.log(
+                        f"Adversarial FAB-T Loss \n(eps={self.adv_eps}, norm=inf)",
+                        loss_adv_fab,
+                    )
+                self.log(
+                        f"Adversarial FAB-T Accuracy \n(eps={self.adv_eps}, norm=inf)",
+                        (y_hat_adv_fab.argmax(dim=1) == y).float().mean(),
+                    )
+                print(f"Adversarial FAB-T Accuracy: ", (y_hat_adv_fab.argmax(dim=1) == y).float().mean())
 
             if self.use_square_attack:
                 y_hat_adv_square = self.square_attack(x, y)
@@ -194,12 +230,13 @@ class Attacks(ABC):
         loss_adv = F.cross_entropy(y_hat_adv, y)
         return loss_adv, y_hat_adv, x_adv
     
-    def targeted_pgd_attack(self, x, y):
+    def targeted_pgd_attack(self, x, y, i):
         """ 
         Performs a targeted projected gradient descent attack on the model as described in
         https://arxiv.org/abs/1706.06083
         """
-        y_target = (y + 1) % self.num_classes
+        y_target = torch.full((self.batch_size,), i) #(y + 1) % self.num_classes
+        y_target = y_target.to(self.device)
         x_adv = projected_gradient_descent(
             self, x, self.adv_eps, 0.007, self.pgd_steps, np.inf, y=y_target, targeted=True
         )
@@ -256,3 +293,21 @@ class Attacks(ABC):
             return robust_accuracy
         else:
             raise NotImplementedError("Salt and pepper attack not implemented for this dataset.")
+    
+    def untargeted_fab_attack(self, x, y):
+        adversary = AutoAttack(self, norm='Linf', eps=self.adv_eps, version='standard')
+        adversary.attacks_to_run = ['fab']
+        x_adv = adversary.run_standard_evaluation(x, y, self.batch_size)
+        y_hat_adv = self(x_adv)
+        loss_adv = F.cross_entropy(y_hat_adv, y)
+        return loss_adv, y_hat_adv, x_adv
+        
+    def targeted_fab_attack(self, x, y):
+        adversary = AutoAttack(self, norm='Linf', eps=self.adv_eps, version='standard')
+        adversary.attacks_to_run = ['fab-t']
+        x_adv = adversary.run_standard_evaluation(x, y, self.batch_size)
+        y_hat_adv = self(x_adv)
+        loss_adv = F.cross_entropy(y_hat_adv, y)
+        return loss_adv, y_hat_adv, x_adv
+
+
