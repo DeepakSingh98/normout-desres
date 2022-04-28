@@ -12,6 +12,8 @@ from models.vgg16_layers import vgg16_layers
 import torchvision.transforms as transforms
 import torch.nn as nn
 import copy
+import numpy as np
+import scipy
 
 class CustomModel(BasicLightningModel):
     """
@@ -38,12 +40,14 @@ class CustomModel(BasicLightningModel):
         replace_layers,
         no_log_sparsity,
         log_input_stats,
+        no_ecoc,
         **kwargs
     ):
         super().__init__(**kwargs)
         self.custom_layer_name = custom_layer_name
         self.pretrained = pretrained
         self.preprocess_during_forward = False
+        self.use_ecoc = not no_ecoc
         use_batch_norm = not no_batch_norm
         use_abs = not no_abs
         log_sparsity = not no_log_sparsity
@@ -110,6 +114,16 @@ class CustomModel(BasicLightningModel):
 
         if not already_sequential:        
             self.model = nn.Sequential(*layers)
+
+        if self.use_ecoc:
+            # create encoding matrix M from a 16x16 Hadamard matrix
+            M = scipy.linalg.hadamard(16).astype(np.float32)
+            M[np.arange(0, self.num_classes, 2), 0]= -1
+            np.random.seed(59); np.random.shuffle(M)
+            idx = np.random.permutation(16)
+            M = M[0:self.num_classes, idx[0:16]]
+            self.M = M
+
         self.report_state(model_name, custom_layer_name, insert_layers, self.custom_layer)
 
     def replace_custom_layer(self, layers, i):
