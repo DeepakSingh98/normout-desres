@@ -27,6 +27,7 @@ class CustomModel(BasicLightningModel):
     def __init__(
         self, 
         model_name,
+        get_robustbench_layers,
         pretrained,
         no_batch_norm, 
         custom_layer_name, 
@@ -47,7 +48,11 @@ class CustomModel(BasicLightningModel):
         self.custom_layer_name = custom_layer_name
         self.pretrained = pretrained
         self.preprocess_during_forward = False
+<<<<<<< HEAD
         self.use_ecoc = not no_ecoc
+=======
+        self.model_name = model_name
+>>>>>>> 5ca49040d69a0e07e2e147feb066506e7dcacadf
         use_batch_norm = not no_batch_norm
         use_abs = not no_abs
         log_sparsity = not no_log_sparsity
@@ -71,6 +76,7 @@ class CustomModel(BasicLightningModel):
             raise ValueError("custom_layer_name must be 'ReLU', 'NormOut', or 'TopK'")
         
         already_sequential = False
+        self.using_robustbench = False
 
         # get model
         if model_name == "VGG16":
@@ -88,10 +94,15 @@ class CustomModel(BasicLightningModel):
             ]:
             layers = resnet_layers(model_name, pretrained, self.num_classes)
         elif model_name in [
-            "Carmon2019Unlabeled"
+            "Carmon2019Unlabeled",
+            "Standard"
             ]:
-            self.model = robustbench_model(model_name)
+            self.model = robustbench_model(model_name, get_robustbench_layers)
+            if self.custom_layer is not None:
+                self.model.bn1 = self.custom_layer
+                self.custom_layer.set_index(0)
             already_sequential = True
+            self.using_robustbench = True
         else:
             raise NotImplementedError("model type not implemented")
 
@@ -142,7 +153,7 @@ class CustomModel(BasicLightningModel):
         self.preprocess_during_forward = state
 
     def forward(self, x):
-        if self.preprocess_during_forward:
+        if self.preprocess_during_forward and not self.using_robustbench:
             x = transforms.Normalize(self.pretrained_means, self.pretrained_stds)(x)
         x = self.model(x)
         return x

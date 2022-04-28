@@ -1,4 +1,5 @@
 from abc import ABC
+from pickle import FALSE
 import numpy as np
 from PIL import Image
 
@@ -7,6 +8,8 @@ from cleverhans.torch.attacks.fast_gradient_method import fast_gradient_method
 from cleverhans.torch.attacks.projected_gradient_descent import (
     projected_gradient_descent,
 )
+from robustbench.data import load_cifar10c
+from robustbench.utils import clean_accuracy
 
 import torch
 import torch.nn.functional as F
@@ -23,11 +26,16 @@ class Attacks(ABC):
     def __init__(
         self,
         no_fgm,
-        no_pgd,
+        no_pgd_ce,
+        no_pgd_t,
+        no_fab,
+        no_fab_t,
         no_square_attack,
         no_randomized_attack,
         no_robustbench,
         no_salt_and_pepper_attack,
+        corruption_types,
+        corruption_severity,
         adv_eps,
         pgd_steps,
         all_attacks_off,
@@ -36,17 +44,23 @@ class Attacks(ABC):
     ):
         # set attributes
         self.use_adversarial_fgm = not no_fgm
-        self.use_adversarial_pgd = not no_pgd
+        self.use_adversarial_pgd_ce = not no_pgd_ce
+        self.use_adversarial_pgd_t = not no_pgd_t
+        self.use_fab_attack = not no_fab
+        self.use_fab_t_attack = not no_fab_t
         self.use_square_attack = not no_square_attack
         self.use_randomized_attack = not no_randomized_attack
         self.use_robustbench = not no_robustbench
         self.use_salt_and_pepper_attack = not no_salt_and_pepper_attack
         self.adv_eps = adv_eps
         self.pgd_steps = pgd_steps
+        self.corruption_types = corruption_types
+        self.corruption_severity = corruption_severity
 
         if all_attacks_off:
             self.use_adversarial_fgm = False
-            self.use_adversarial_pgd = False
+            self.use_adversarial_pgd_ce = False
+            self.use_adversarial_pgd_t = False
             self.use_square_attack = False
             self.use_randomized_attack = False
             self.use_robustbench = False
@@ -61,19 +75,30 @@ class Attacks(ABC):
 
             self.set_preprocess_during_forward(True)
 
-            transform_list = [transforms.ToTensor()]
-            transform_chain = transforms.Compose(transform_list)
-            item = torchvision.datasets.CIFAR10(root="./data", train=False, transform=transform_chain, download=True)
-            test_loader = torch.utils.data.DataLoader(item, batch_size=256, shuffle=False, num_workers=self.num_workers)
+            if self.corruption_types is not None:
+                x, y = load_cifar10c(n_examples=256, corruptions=self.corruption_types, severity=self.corruption_severity)
             
-            # TODO: currently uses just one batch.
-            x, y = next(iter(test_loader))
+            else:
+                transform_list = [transforms.ToTensor()]
+                transform_chain = transforms.Compose(transform_list)
+                item = torchvision.datasets.CIFAR10(root="./data", train=False, transform=transform_chain, download=True)
+                test_loader = torch.utils.data.DataLoader(item, batch_size=256, shuffle=False, num_workers=self.num_workers)
+                
+                # TODO: currently uses just one batch.
+                x, y = next(iter(test_loader))
 
             x = x.to(self.device); y = y.to(self.device)
 
             # for pgd attack, need to backpropogate to input.
             torch.set_grad_enabled(True)
             x.requires_grad = True
+
+            if self.corruption_types is not None:
+                acc = clean_accuracy(self, x, y)
+                print(f'Model: {self.model_name}, CIFAR-10-C accuracy: {acc:.1%}')
+                self.log(
+                    f"Corruption Accuracy with corruptions={self.corruption_types}, severity={self.corruption_severity}: ", acc
+                )
 
             if self.use_robustbench:
                 print("Evaluating RobustBenchmark...")
@@ -105,17 +130,61 @@ class Attacks(ABC):
                 )
                 print("Adversarial FGM Accuracy: ", (y_hat_adv_fgm.argmax(dim=1) == y).float().mean())
 
-            if self.use_adversarial_pgd:
-                loss_adv_pgd, y_hat_adv_pgd, _ = self.pgd_attack(x, y)
+            if self.use_adversarial_pgd_ce:
+                loss_adv_pgd, y_hat_adv_pgd, _ = self.untargeted_pgd_attack(x, y)
+                print(f'Ground truth label: {y[0]}')
+                print(f'Prediction post attack: {y_hat_adv_pgd[0]}')
                 self.log(
-                    f"Adversarial PGD Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
+                    f"Adversarial PGD-CE Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
                     loss_adv_pgd,
                 )
                 self.log(
-                    f"Adversarial PGD Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
+                    f"Adversarial PGD-CE Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
                     (y_hat_adv_pgd.argmax(dim=1) == y).float().mean(),
                 )
-                print("Adversarial PGD Accuracy: ", (y_hat_adv_pgd.argmax(dim=1) == y).float().mean())
+                print("Adversarial PGD-CE Accuracy: ", (y_hat_adv_pgd.argmax(dim=1) == y).float().mean())
+            
+            if self.use_adversarial_pgd_t:
+                for i in range(10):
+                    loss_adv_pgd, y_hat_adv_pgd, _ = self.targeted_pgd_attack(x, y, i)
+                    print(f'Ground truth label: {y[0]}')
+                    print(f'Adversary targeting class {i}')
+                    print(f'Prediction post attack: {y_hat_adv_pgd[0]}')
+                    '''
+                    self.log(
+                        f"Adversarial PGD-T Loss \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
+                        loss_adv_pgd,
+                    )
+                    self.log(
+                        f"Adversarial PGD-T for Target Class {i} Accuracy \n(eps={self.adv_eps}, norm=inf, eps_iter={self.pgd_steps}, step_size=0.007)",
+                        (y_hat_adv_pgd.argmax(dim=1) == y).float().mean(),
+                    )
+                    '''
+                    print(f"Adversarial PGD-T for Target Class {i} Accuracy: ", (y_hat_adv_pgd.argmax(dim=1) == y).float().mean())
+            
+            if self.use_fab_attack:
+                loss_adv_fab, y_hat_adv_fab, _ = self.untargeted_fab_attack(x, y)
+                self.log(
+                        f"Adversarial Untargeted FAB Loss \n(eps={self.adv_eps}, norm=inf)",
+                        loss_adv_fab,
+                    )
+                self.log(
+                        f"Adversarial Untargeted FAB Accuracy \n(eps={self.adv_eps}, norm=inf)",
+                        (y_hat_adv_fab.argmax(dim=1) == y).float().mean(),
+                    )
+                print(f"Adversarial Untargeted FAB Accuracy: ", (y_hat_adv_fab.argmax(dim=1) == y).float().mean())
+            
+            if self.use_fab_t_attack:
+                loss_adv_fab, y_hat_adv_fab, _ = self.targeted_fab_attack(x, y)
+                self.log(
+                        f"Adversarial FAB-T Loss \n(eps={self.adv_eps}, norm=inf)",
+                        loss_adv_fab,
+                    )
+                self.log(
+                        f"Adversarial FAB-T Accuracy \n(eps={self.adv_eps}, norm=inf)",
+                        (y_hat_adv_fab.argmax(dim=1) == y).float().mean(),
+                    )
+                print(f"Adversarial FAB-T Accuracy: ", (y_hat_adv_fab.argmax(dim=1) == y).float().mean())
 
             if self.use_square_attack:
                 y_hat_adv_square = self.square_attack(x, y)
@@ -149,13 +218,27 @@ class Attacks(ABC):
             self.set_preprocess_during_forward(False)
 
 
-    def pgd_attack(self, x, y):
+    def untargeted_pgd_attack(self, x, y):
         """ 
-        Performs a projected gradient descent attack on the model as described in
+        Performs an untargeted projected gradient descent attack on the model as described in
         https://arxiv.org/abs/1706.06083
         """
         x_adv = projected_gradient_descent(
             self, x, self.adv_eps, 0.007, self.pgd_steps, np.inf
+        )
+        y_hat_adv = self(x_adv)
+        loss_adv = F.cross_entropy(y_hat_adv, y)
+        return loss_adv, y_hat_adv, x_adv
+    
+    def targeted_pgd_attack(self, x, y, i):
+        """ 
+        Performs a targeted projected gradient descent attack on the model as described in
+        https://arxiv.org/abs/1706.06083
+        """
+        y_target = torch.full((self.batch_size,), i) #(y + 1) % self.num_classes
+        y_target = y_target.to(self.device)
+        x_adv = projected_gradient_descent(
+            self, x, self.adv_eps, 0.007, self.pgd_steps, np.inf, y=y_target, targeted=True
         )
         y_hat_adv = self(x_adv)
         loss_adv = F.cross_entropy(y_hat_adv, y)
@@ -210,3 +293,21 @@ class Attacks(ABC):
             return robust_accuracy
         else:
             raise NotImplementedError("Salt and pepper attack not implemented for this dataset.")
+    
+    def untargeted_fab_attack(self, x, y):
+        adversary = AutoAttack(self, norm='Linf', eps=self.adv_eps, version='standard')
+        adversary.attacks_to_run = ['fab']
+        x_adv = adversary.run_standard_evaluation(x, y, self.batch_size)
+        y_hat_adv = self(x_adv)
+        loss_adv = F.cross_entropy(y_hat_adv, y)
+        return loss_adv, y_hat_adv, x_adv
+        
+    def targeted_fab_attack(self, x, y):
+        adversary = AutoAttack(self, norm='Linf', eps=self.adv_eps, version='standard')
+        adversary.attacks_to_run = ['fab-t']
+        x_adv = adversary.run_standard_evaluation(x, y, self.batch_size)
+        y_hat_adv = self(x_adv)
+        loss_adv = F.cross_entropy(y_hat_adv, y)
+        return loss_adv, y_hat_adv, x_adv
+
+
