@@ -48,11 +48,8 @@ class CustomModel(BasicLightningModel):
         self.custom_layer_name = custom_layer_name
         self.pretrained = pretrained
         self.preprocess_during_forward = False
-<<<<<<< HEAD
         self.use_ecoc = not no_ecoc
-=======
         self.model_name = model_name
->>>>>>> 5ca49040d69a0e07e2e147feb066506e7dcacadf
         use_batch_norm = not no_batch_norm
         use_abs = not no_abs
         log_sparsity = not no_log_sparsity
