@@ -22,6 +22,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         num_workers,
         dset_name,
         no_data_augmentation,
+        use_robustbench_data,
         # optimizer
         optimizer,
         lr,
@@ -43,6 +44,10 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         self.lr = lr
         self.weight_decay = weight_decay
         self.momentum = momentum
+        self.use_robustbench_data = use_robustbench_data
+
+        if use_robustbench_data:
+            self.use_data_augmentation = False
 
         # dataset
         self.define_dataset(dset_name)
@@ -134,20 +139,33 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
                                     transforms.Normalize(mean=self.pretrained_means,
                                                          std=self.pretrained_stds)
                                 ])
+            
+            self.robustbench_transforms = transforms.Compose([transforms.ToTensor()])
 
             if self.use_data_augmentation:
                 print("Using data augmentation")
                 self.training_set = torchvision.datasets.CIFAR10(
                     "./data", train=True, transform=augment_transforms, download=True
                 )
+            elif self.use_robustbench_data:
+                self.training_set = torchvision.datasets.CIFAR10(
+                    "./data", train=True, transform=self.robustbench_transforms, download=True
+                )
+
             else:
                 self.training_set = torchvision.datasets.CIFAR10(
                     "./data", train=True, transform=self.plain_transforms, download=True
                 )
-                
-            self.validation_set = torchvision.datasets.CIFAR10(
-                "./data", train=False, transform=self.plain_transforms, download=True
-            )
+            
+            if self.use_robustbench_data:
+                    self.validation_set = torchvision.datasets.CIFAR10(
+                    "./data", train=False, transform=self.robustbench_transforms, download=True
+                )
+
+            else:    
+                self.validation_set = torchvision.datasets.CIFAR10(
+                    "./data", train=False, transform=self.plain_transforms, download=True
+                )
                 
             self.num_channels = 3
             self.num_classes = 10

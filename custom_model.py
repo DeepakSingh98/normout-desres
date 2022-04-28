@@ -25,6 +25,7 @@ class CustomModel(BasicLightningModel):
     def __init__(
         self, 
         model_name,
+        get_robustbench_layers,
         pretrained,
         no_batch_norm, 
         custom_layer_name, 
@@ -89,7 +90,10 @@ class CustomModel(BasicLightningModel):
             "Carmon2019Unlabeled",
             "Standard"
             ]:
-            self.model = robustbench_model(model_name)
+            self.model = robustbench_model(model_name, get_robustbench_layers)
+            if self.custom_layer is not None:
+                self.model.bn1 = self.custom_layer
+                self.custom_layer.set_index(0)
             already_sequential = True
             self.using_robustbench = True
         else:
