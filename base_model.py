@@ -67,7 +67,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
             np.random.seed(59); np.random.shuffle(M)
             idx = np.random.permutation(16)
             M = M[0:self.num_classes, idx[0:16]]
-            self.M = M
+            self.M = torch.Tensor(M, device=self.device)
 
     @abstractmethod
     def forward(self, x):
@@ -93,14 +93,15 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
 
     def calculate_loss(self, y, y_hat):
         if self.use_ecoc:
-            # y is batch x 10, y_hat batch x 16
+            # y is batch x 1, y_hat batch x 16
             # first, do tanh on y
+            self.M = self.M.to(self.device)
             y_hat = torch.tanh(y_hat)
             # y is max of 0 and matrix mult of y and self.M
-            y_hat = torch.max(torch.zeros_like(y_hat), torch.matmul(y, self.M.T))
+            y_hat = torch.max(torch.zeros((y_hat.shape[0], self.M.T.shape[1])).to(self.device), torch.matmul(y_hat, self.M.T))
             # y is now batch x 10
             # normalize by dividing by max of each row
-            y_hat = y_hat / torch.max(y_hat, dim=1, keepdim=True) # batch x 10 (class probs)
+            y_hat = y_hat / torch.max(y_hat, dim=1, keepdim=True)[0] # batch x 10 (class probs)
             loss = F.cross_entropy(y_hat, y)
 
         else:
