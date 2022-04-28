@@ -56,6 +56,8 @@ parser.add_argument("--corruption-severity", type=int, default=1, help="Severity
 # logging
 parser.add_argument("--no-log-sparsity", default=False, action="store_true", help="Don't log sparsity (default False")
 parser.add_argument("--log-input-stats", default=False, action="store_true", help="Log input stats (default False)")
+# use ecoc
+parser.add_argument("--no-ecoc", default=False, action="store_true", help="Don't use error correcting output codes (default False)")
 args = parser.parse_args()
 
 # get model

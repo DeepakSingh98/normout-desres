@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+import numpy as np
+import scipy
 
 import pytorch_lightning as pl
 import torch
@@ -29,6 +31,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         weight_decay,
         momentum,
         # catch other kwargs
+        use_ecoc,
         **kwargs
         ):
 
@@ -45,6 +48,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         self.weight_decay = weight_decay
         self.momentum = momentum
         self.use_robustbench_data = use_robustbench_data
+        self.use_ecoc = use_ecoc
 
         if use_robustbench_data:
             self.use_data_augmentation = False
@@ -56,6 +60,15 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         self.train_acc: torchmetrics.Accuracy = torchmetrics.Accuracy()
         self.valid_acc: torchmetrics.Accuracy = torchmetrics.Accuracy()
 
+        if self.use_ecoc:
+            # create encoding matrix M from a 16x16 Hadamard matrix
+            M = scipy.linalg.hadamard(16).astype(np.float32)
+            M[np.arange(0, self.num_classes, 2), 0]= -1
+            np.random.seed(59); np.random.shuffle(M)
+            idx = np.random.permutation(16)
+            M = M[0:self.num_classes, idx[0:16]]
+            self.M = M
+
     @abstractmethod
     def forward(self, x):
         raise NotImplementedError("Forward pass not implemented")
@@ -63,7 +76,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
-        loss = F.cross_entropy(y_hat, y)
+        loss = self.calculate_loss(y, y_hat)
         self.train_acc(y_hat, y)
         self.log("Train Accuracy", self.train_acc, on_step=False, on_epoch=True)
         self.log("Train Loss", loss, on_step=True, on_epoch=True)
@@ -72,10 +85,26 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
-        loss = F.cross_entropy(y_hat, y)
+        loss = self.calculate_loss(y, y_hat)
         self.valid_acc(y_hat, y)
         self.log("Validation Accuracy", self.valid_acc, on_step=False, on_epoch=True)
         self.log("Validation Loss", loss, on_step=False, on_epoch=True)
+        return loss
+
+    def calculate_loss(self, y, y_hat):
+        if self.use_ecoc:
+            # y is batch x 10, y_hat batch x 16
+            # first, do tanh on y
+            y_hat = torch.tanh(y_hat)
+            # y is max of 0 and matrix mult of y and self.M
+            y_hat = torch.max(torch.zeros_like(y_hat), torch.matmul(y, self.M.T))
+            # y is now batch x 10
+            # normalize by dividing by max of each row
+            y_hat = y_hat / torch.max(y_hat, dim=1, keepdim=True) # batch x 10 (class probs)
+            loss = F.cross_entropy(y_hat, y)
+
+        else:
+            loss = F.cross_entropy(y_hat, y)
         return loss
 
     def define_dataset(self, dset_name):
