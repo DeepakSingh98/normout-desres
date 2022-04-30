@@ -45,8 +45,8 @@ parser.add_argument("--no-pgd-ce", default=False, action="store_true", help="Don
 parser.add_argument("--no-pgd-t", default=False, action="store_true", help="Don't use adversarial pgd-t (default False)")
 parser.add_argument("--no-fab",  default=True, action="store_true", help="Don't use Untargeted FAB attack (default False)")
 parser.add_argument("--no-fab-t",  default=True, action="store_true", help="Don't use FAB-T attack (default False)")
-parser.add_argument("--no-square-attack", default=True, action="store_true", help="Don't use square attack (default False)")
-parser.add_argument("--no-randomized-attack", default=True, action="store_true", help="Don't use randomized attacks (default False)")
+parser.add_argument("--no-square-attack", default=False, action="store_true", help="Don't use square attack (default False)")
+parser.add_argument("--no-randomized-attack", default=False, action="store_true", help="Don't use randomized attacks (default False)")
 parser.add_argument("--no-robustbench", default=False, action="store_true", help="Don't use robustbench autoattack (default False)")
 parser.add_argument("--no-salt-and-pepper-attack", default=True, action="store_true", help="Don't use salt and pepper attack (default False)")
 parser.add_argument("--adv-eps", type=float, default=0.03, help="adversarial epsilon (default 0.03)")
@@ -57,7 +57,7 @@ parser.add_argument("--corruption-severity", type=int, default=1, help="Severity
 parser.add_argument("--no-log-sparsity", default=False, action="store_true", help="Don't log sparsity (default False")
 parser.add_argument("--log-input-stats", default=False, action="store_true", help="Log input stats (default False)")
 # use ecoc
-parser.add_argument("--no-ecoc", default=False, action="store_true", help="Don't use error correcting output codes (default False)")
+parser.add_argument("--no-ecoc", default=True, action="store_true", help="Don't use error correcting output codes (default False)")
 args = parser.parse_args()
 
 # get model

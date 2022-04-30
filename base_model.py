@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from logging import logProcesses
 import numpy as np
 import scipy
 
@@ -60,6 +61,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         self.train_acc: torchmetrics.Accuracy = torchmetrics.Accuracy()
         self.valid_acc: torchmetrics.Accuracy = torchmetrics.Accuracy()
 
+    '''
         if self.use_ecoc:
             # create encoding matrix M from a 16x16 Hadamard matrix
             M = scipy.linalg.hadamard(16).astype(np.float32)
@@ -68,6 +70,11 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
             idx = np.random.permutation(16)
             M = M[0:self.num_classes, idx[0:16]]
             self.M = torch.Tensor(M, device=self.device)
+    
+    def encode_data(self, y):
+        y = [self.M[i] for i in y]
+        return y
+    '''
 
     @abstractmethod
     def forward(self, x):
@@ -75,8 +82,9 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
 
     def training_step(self, batch, batch_idx):
         x, y = batch
+        #y = self.encode_data(y)
         y_hat = self(x)
-        loss = self.calculate_loss(y, y_hat)
+        loss = F.cross_entropy(y, y_hat)
         self.train_acc(y_hat, y)
         self.log("Train Accuracy", self.train_acc, on_step=False, on_epoch=True)
         self.log("Train Loss", loss, on_step=True, on_epoch=True)
@@ -90,23 +98,18 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         self.log("Validation Accuracy", self.valid_acc, on_step=False, on_epoch=True)
         self.log("Validation Loss", loss, on_step=False, on_epoch=True)
         return loss
-
+    
+    '''
     def calculate_loss(self, y, y_hat):
-        if self.use_ecoc:
-            # y is batch x 1, y_hat batch x 16
-            # first, do tanh on y
-            self.M = self.M.to(self.device)
-            y_hat = torch.tanh(y_hat)
-            # y is max of 0 and matrix mult of y and self.M
-            y_hat = torch.max(torch.zeros((y_hat.shape[0], self.M.T.shape[1])).to(self.device), torch.matmul(y_hat, self.M.T))
-            # y is now batch x 10
-            # normalize by dividing by max of each row
-            y_hat = y_hat / torch.max(y_hat, dim=1, keepdim=True)[0] # batch x 10 (class probs)
-            loss = F.cross_entropy(y_hat, y)
-
-        else:
-            loss = F.cross_entropy(y_hat, y)
+        # Use hinge loss when doing Hadamard codes
+       # if self.use_ecoc:
+        #    loss = torch.mean(torch.max(1.0 - y_hat * y, 0)[0])
+         #   torch.set_grad_enabled(True)
+          #  loss.requires_grad = True
+        #else:
+        loss = F.cross_entropy(y_hat, y)
         return loss
+    '''
 
     def define_dataset(self, dset_name):
         if dset_name == "MNIST-Fashion":
