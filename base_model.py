@@ -84,7 +84,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         x, y = batch
         #y = self.encode_data(y)
         y_hat = self(x)
-        loss = F.cross_entropy(y, y_hat)
+        loss = self.calculate_loss(y, y_hat)
         self.train_acc(y_hat, y)
         self.log("Train Accuracy", self.train_acc, on_step=False, on_epoch=True)
         self.log("Train Loss", loss, on_step=True, on_epoch=True)
@@ -99,17 +99,8 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         self.log("Validation Loss", loss, on_step=False, on_epoch=True)
         return loss
     
-    '''
     def calculate_loss(self, y, y_hat):
-        # Use hinge loss when doing Hadamard codes
-       # if self.use_ecoc:
-        #    loss = torch.mean(torch.max(1.0 - y_hat * y, 0)[0])
-         #   torch.set_grad_enabled(True)
-          #  loss.requires_grad = True
-        #else:
-        loss = F.cross_entropy(y_hat, y)
-        return loss
-    '''
+        return F.cross_entropy(y_hat, y)
 
     def define_dataset(self, dset_name):
         if dset_name == "MNIST-Fashion":
