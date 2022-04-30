@@ -12,6 +12,7 @@ from models.vgg16_layers import vgg16_layers
 import torchvision.transforms as transforms
 import torch.nn as nn
 import copy
+import torch
 
 class CustomModel(BasicLightningModel):
     """
@@ -146,6 +147,19 @@ class CustomModel(BasicLightningModel):
         if self.preprocess_during_forward and not self.using_robustbench:
             x = transforms.Normalize(self.pretrained_means, self.pretrained_stds)(x)
         x = self.model(x)
+        '''
+        if self.use_ecoc:
+            # y is batch x 1, y_hat batch x 16
+            # first, do tanh on y
+            self.M = self.M.to(self.device)
+            x = torch.tanh(x)
+            # y is max of 0 and matrix mult of y and self.M
+            x = torch.max(torch.zeros((x.shape[0], self.M.T.shape[1])).to(self.device), torch.matmul(x, self.M.T))
+            # y is now batch x 10
+            # normalize by dividing by max of each row
+            x = x / torch.max(x, dim=1, keepdim=True)[0] # batch x 10 (class probs)
+           # x = torch.argmax(x, dim=1)
+        '''
         return x
 
     def report_state(self, model_name, custom_layer_name, insert_layers, custom_layer):
