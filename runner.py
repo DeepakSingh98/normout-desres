@@ -10,7 +10,7 @@ import wandb
 # parse arguments
 # general settings
 parser = argparse.ArgumentParser()
-parser.add_argument("--epochs", type=int, default=100, help="number of epochs (default 100)")
+parser.add_argument("--epochs", type=int, default=200, help="number of epochs (default 100)")
 parser.add_argument("--batch-size", type=int, default=256, help="batch size (default 256)")
 parser.add_argument("--num-workers", type=int, default=4, help="number of workers used for data loading (default 4)")
 parser.add_argument("--num-gpus", type=int, default=1, help="number of gpus to use (default 1)")
@@ -45,8 +45,8 @@ parser.add_argument("--no-pgd-ce", default=False, action="store_true", help="Don
 parser.add_argument("--no-pgd-t", default=False, action="store_true", help="Don't use adversarial pgd-t (default False)")
 parser.add_argument("--no-fab",  default=True, action="store_true", help="Don't use Untargeted FAB attack (default False)")
 parser.add_argument("--no-fab-t",  default=True, action="store_true", help="Don't use FAB-T attack (default False)")
-parser.add_argument("--no-square-attack", default=False, action="store_true", help="Don't use square attack (default False)")
-parser.add_argument("--no-randomized-attack", default=False, action="store_true", help="Don't use randomized attacks (default False)")
+parser.add_argument("--no-square-attack", default=True, action="store_true", help="Don't use square attack (default False)")
+parser.add_argument("--no-randomized-attack", default=True, action="store_true", help="Don't use randomized attacks (default False)")
 parser.add_argument("--no-robustbench", default=False, action="store_true", help="Don't use robustbench autoattack (default False)")
 parser.add_argument("--no-salt-and-pepper-attack", default=True, action="store_true", help="Don't use salt and pepper attack (default False)")
 parser.add_argument("--adv-eps", type=float, default=0.03, help="adversarial epsilon (default 0.03)")
