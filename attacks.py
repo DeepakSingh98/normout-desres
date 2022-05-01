@@ -147,7 +147,6 @@ class Attacks(ABC):
         )
         image_grid = torchvision.utils.make_grid(x_adv[:5, :, :, :], nrow=5, normalize=True)
         self.logger.log_image(
-            key=f"{attack_name}_images",
             caption=f"{attack_name} Examples, (labels, y_hat): {[(i.item(), j.item()) for i, j in zip(y[:5], y_hat_adv.argmax(dim=1)[:5])]}",
             images=[image_grid],
         )
