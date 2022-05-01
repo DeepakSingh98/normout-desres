@@ -74,7 +74,7 @@ class Attacks(ABC):
 
             self.set_preprocess_during_forward(True)
 
-            if self.dset_name != 'cifar10':
+            if self.dset_name != 'CIFAR10':
                 raise NotImplementedError('Only CIFAR-10 is supported for now.')
 
             x, y = load_cifar10(n_examples=256)
@@ -143,12 +143,13 @@ class Attacks(ABC):
             f"{attack_name} Loss", F.cross_entropy(y_hat_adv, y)
         )
         self.log(
-            f"{attack_name} Accuracy", (y_hat_adv == y).float().mean()
+            f"{attack_name} Accuracy", (y_hat_adv.argmax(dim=1) == y).float().mean()
         )
-        image_grid = torchvision.utils.make_grid(x_adv, nrow=5, normalize=True)
+        image_grid = torchvision.utils.make_grid(x_adv[:5, :, :, :], nrow=5, normalize=True)
         self.logger.log_image(
-            image_grid,
-            caption=f"{attack_name}, (labels, y_hat): {zip(y, y_hat_adv.argmax(dim=1))}",
+            key=f"{attack_name}_images",
+            caption=f"{attack_name} Examples, (labels, y_hat): {[(i.item(), j.item()) for i, j in zip(y[:5], y_hat_adv.argmax(dim=1)[:5])]}",
+            images=[image_grid],
         )
 
     def fgm_attack(self, x, y):
