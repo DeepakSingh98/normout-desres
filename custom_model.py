@@ -158,7 +158,6 @@ class CustomModel(BasicLightningModel):
         if self.preprocess_during_forward and not self.using_robustbench:
             x = transforms.Normalize(self.pretrained_means, self.pretrained_stds)(x)
         x = self.model(x)
-
         return x
 
     def report_state(self, model_name, custom_layer_name, insert_layers, custom_layer):

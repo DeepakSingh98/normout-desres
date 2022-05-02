@@ -22,11 +22,9 @@ def set_tags(args):
     if (args.custom_layer_name == "NormOut" or args.custom_layer_name == "Dropout") and args.on_at_inference:
         tags.append("on-at-inference")
     if args.custom_layer_name is not None and args.replace_layers is not None:
-        tags.append(f"Layers at {args.replace_layers} replaced with {args.custom_layer_name}")
+        tags.append(f"replaced_{'_'.join([str(i) for i in args.replace_layers])}")
     if args.custom_layer_name is not None and args.insert_layers is not None:
-        tags.append(f"{args.custom_layer_name} layers at {','.join([str(i) for i in args.insert_layers])}")
+        tags.append(f"inserted_{'_'.join([str(i) for i in args.insert_layers])}")
     if args.remove_layers is not None:
-        tags.append(f"Layers removed from indices {args.remove_layers}")
-    if not args.no_pgd_ce:
-        tags.append(f"pgd steps: {args.pgd_steps}")
+        tags.append(f"removed_{'_'.join([str(i) for i in args.remove_layers])}")
     return tags
