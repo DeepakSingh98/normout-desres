@@ -1,5 +1,4 @@
 from abc import ABC
-from pickle import FALSE
 import numpy as np
 from pytorch_lightning.loggers import WandbLogger
 
@@ -64,7 +63,6 @@ class Attacks(ABC):
             self.use_randomized_attack = False
             self.use_robustbench = False
             self.use_salt_and_pepper_attack = False
-
 
     def on_validation_epoch_end(self):
         """
