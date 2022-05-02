@@ -29,6 +29,7 @@ parser.add_argument("--get-robustbench-layers", default=False, action="store_tru
 parser.add_argument("--pretrained", default=False, action="store_true", help="Use pretrained model")
 parser.add_argument("--topk-k", type=int, default=10, help="k value for TopK")
 parser.add_argument("--dropout-p", type=float, default=0.5, help="p value for Dropout (probability of neuron being dropped)")
+parser.add_argument("--dropout-replacement-2-p", type=float, default=0.5, help="p value for second Dropout replacement (used for p-sweeping)")
 parser.add_argument("--no-batch-norm", default=False, action="store_true", help="Don't use batch norm (default False)")
 parser.add_argument("--replace-layers", type=int, nargs="+", default=None, help="layer indices at which the layer is placed with the custom layer (NOTE: happens after removal and insertion)")
 parser.add_argument("--remove-layers", type=int, nargs="+", default=None, help="layer indices at which the layer is removed from the model; give vals in ascending order")
@@ -46,22 +47,20 @@ parser.add_argument("--no-pgd-t", default=False, action="store_true", help="Don'
 parser.add_argument("--no-fab",  default=True, action="store_true", help="Don't use Untargeted FAB attack (default False)")
 parser.add_argument("--no-fab-t",  default=True, action="store_true", help="Don't use FAB-T attack (default False)")
 parser.add_argument("--no-square-attack", default=True, action="store_true", help="Don't use square attack (default False)")
-parser.add_argument("--no-randomized-attack", default=True, action="store_true", help="Don't use randomized attacks (default False)")
+parser.add_argument("--no-randomized-attack", default=False, action="store_true", help="Don't use randomized attacks (default False)") #TODO make False default
 parser.add_argument("--no-robustbench", default=False, action="store_true", help="Don't use robustbench autoattack (default False)")
 parser.add_argument("--no-salt-and-pepper-attack", default=True, action="store_true", help="Don't use salt and pepper attack (default False)")
 parser.add_argument("--adv-eps", type=float, default=0.03, help="adversarial epsilon (default 0.03)")
 parser.add_argument("--pgd-steps", type=int, default=10, help="number of steps for PGD (default 10)")
 parser.add_argument("--corruption-types", type=str, nargs="+", default=None, help="type of corruption to add (supports shot_noise, motion_blur, snow, pixelate, gaussian_noise, defocus_blur, brightness, fog, zoom_blur, frost, glass_blur, impulse_noise, contrast, jpeg_compression, elastic_transform")
 parser.add_argument("--corruption-severity", type=int, default=1, help="Severity of corruption, supports ints 1 through 5 (default 1)")
+parser.add_argument("--log-adversarial-examples", default=False, action="store_true", help="Log adversarial examples (default False)")
 # logging
 parser.add_argument("--no-log-sparsity", default=False, action="store_true", help="Don't log sparsity (default False")
 parser.add_argument("--log-input-stats", default=False, action="store_true", help="Log input stats (default False)")
 # use ecoc
 parser.add_argument("--no-ecoc", default=True, action="store_true", help="Don't use error correcting output codes (default False)")
 args = parser.parse_args()
-
-# get model
-model = CustomModel(**vars(args))
 
 # wandb
 tags = set_tags(args)
@@ -74,6 +73,16 @@ wandb_logger = WandbLogger(
     config=args,
     settings=wandb.Settings(start_method="thread")
 )
+config = wandb.config
+
+# update args with wandb config
+for k, v in config.items():
+    if k in args:
+        args.__setattr__(k, v)
+
+# get model
+model = CustomModel(**vars(args))
+
 wandb_logger.watch(model)
 
 # train

@@ -37,6 +37,7 @@ class Attacks(ABC):
         adv_eps,
         pgd_steps,
         all_attacks_off,
+        log_adversarial_examples,
         # catch other kwargs
         **kwargs
     ):
@@ -54,6 +55,7 @@ class Attacks(ABC):
         self.pgd_steps = pgd_steps
         self.corruption_types = corruption_types
         self.corruption_severity = corruption_severity
+        self.log_adversarial_examples = log_adversarial_examples
 
         if all_attacks_off:
             self.use_adversarial_fgm = False
@@ -120,7 +122,7 @@ class Attacks(ABC):
             
             if self.use_randomized_attack:
                 self.random_apgd_dlr_attack(x, y)
-                self.random_apgd_dlr_attack(x, y, targeted=True)
+                self.random_apgd_ce_attack(x, y)
 
             if self.use_salt_and_pepper_attack:
                 self.salt_and_pepper_attack(x, y)
@@ -135,19 +137,20 @@ class Attacks(ABC):
                     f"Corruption Accuracy (corruption types={self.corruption_types}, severity={self.corruption_severity})", acc
                 )
 
-    def log_attack_stats(self, x_adv, y_hat_adv, y, attack_name):
+    def log_attack_stats(self, x_adv, y_hat_adv: torch.Tensor, y, attack_name):
         self.logger: WandbLogger
         self.log(
-            f"{attack_name} Loss", F.cross_entropy(y_hat_adv, y)
+            f"{attack_name} Loss", F.cross_entropy(y_hat_adv.to(torch.float), y)
         )
         self.log(
             f"{attack_name} Accuracy", (y_hat_adv.argmax(dim=1) == y).float().mean()
         )
-        image_grid = torchvision.utils.make_grid(x_adv[:5, :, :, :], nrow=5, normalize=True)
-        self.logger.log_image(
-            caption=f"{attack_name} Examples, (labels, y_hat): {[(i.item(), j.item()) for i, j in zip(y[:5], y_hat_adv.argmax(dim=1)[:5])]}",
-            images=[image_grid],
-        )
+        if self.log_adversarial_examples:
+            image_grid = torchvision.utils.make_grid(x_adv[:5, :, :, :], nrow=5, normalize=True)
+            self.logger.log_image(
+                caption=f"{attack_name} Examples, (labels, y_hat): {[(i.item(), j.item()) for i, j in zip(y[:5], y_hat_adv.argmax(dim=1)[:5])]}",
+                images=[image_grid],
+            )
 
     def fgm_attack(self, x, y):
         """
@@ -188,7 +191,8 @@ class Attacks(ABC):
         """
         adversary = AutoAttack(self, norm='Linf', eps=.3, version='rand')
         adversary.attacks_to_run = ['square']
-        x_adv, y_hat_adv = adversary.run_standard_evaluation(x, y, return_labels=True)
+        x_adv = adversary.run_standard_evaluation(x, y)
+        y_hat_adv = self(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "Square")
     
     def random_apgd_ce_attack(self, x, y):
@@ -197,8 +201,9 @@ class Attacks(ABC):
         """
         adversary = AutoAttack(self, norm='Linf', eps=.3, version='rand')
         adversary.attacks_to_run = ['apgd-ce']
-        x_adv, y_hat_adv = adversary.run_standard_evaluation(x, y, return_labels=True)
-        self.log_attack_stats(x_adv, y_hat_adv, y, "APGD-CE")
+        x_adv = adversary.run_standard_evaluation(x, y)
+        y_hat_adv = self(x_adv)
+        self.log_attack_stats(x_adv, y_hat_adv, y, "EOI APGD-CE")
     
     def random_apgd_dlr_attack(self, x, y):
         """
@@ -206,8 +211,9 @@ class Attacks(ABC):
         """
         adversary = AutoAttack(self, norm='Linf', eps=.3, version='rand')
         adversary.attacks_to_run = ['apgd-dlr']
-        x_adv, y_hat_adv = adversary.run_standard_evaluation(x, y, return_labels=True)
-        self.log_attack_stats(x_adv, y_hat_adv, y, "APGD-DLR")
+        x_adv = adversary.run_standard_evaluation(x, y)
+        y_hat_adv = self(x_adv)
+        self.log_attack_stats(x_adv, y_hat_adv, y, "EOI APGD-DLR")
     
     def untargeted_fab_attack(self, x, y):
         adversary = AutoAttack(self, norm='Linf', eps=self.adv_eps, version='standard')

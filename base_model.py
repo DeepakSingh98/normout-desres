@@ -61,21 +61,6 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         self.train_acc: torchmetrics.Accuracy = torchmetrics.Accuracy()
         self.valid_acc: torchmetrics.Accuracy = torchmetrics.Accuracy()
 
-    '''
-        if self.use_ecoc:
-            # create encoding matrix M from a 16x16 Hadamard matrix
-            M = scipy.linalg.hadamard(16).astype(np.float32)
-            M[np.arange(0, self.num_classes, 2), 0]= -1
-            np.random.seed(59); np.random.shuffle(M)
-            idx = np.random.permutation(16)
-            M = M[0:self.num_classes, idx[0:16]]
-            self.M = torch.Tensor(M, device=self.device)
-    
-    def encode_data(self, y):
-        y = [self.M[i] for i in y]
-        return y
-    '''
-
     @abstractmethod
     def forward(self, x):
         raise NotImplementedError("Forward pass not implemented")

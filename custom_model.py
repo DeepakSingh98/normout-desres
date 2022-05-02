@@ -34,6 +34,7 @@ class CustomModel(BasicLightningModel):
         max_type,
         on_at_inference, 
         dropout_p,
+        dropout_replacement_2_p,
         topk_k,
         remove_layers,
         insert_layers,
@@ -49,6 +50,7 @@ class CustomModel(BasicLightningModel):
         self.pretrained = pretrained
         self.preprocess_during_forward = False
         self.model_name = model_name
+        self.dropout_replacement_2_p = None
         use_batch_norm = not no_batch_norm
         use_abs = not no_abs
         log_sparsity = not no_log_sparsity
@@ -66,6 +68,8 @@ class CustomModel(BasicLightningModel):
             self.custom_layer = TopK(topk_k, on_at_inference, log_input_stats, log_sparsity)
         elif custom_layer_name == "Dropout":
             self.custom_layer = CustomDropout(dropout_p, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
+            if dropout_replacement_2_p is not None:
+                self.dropout_replacement_2_p = CustomDropout(dropout_replacement_2_p, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         elif custom_layer_name == "ExpOut":
             self.custom_layer = ExpOut()
         else:
@@ -116,8 +120,12 @@ class CustomModel(BasicLightningModel):
         
         if self.custom_layer is not None and replace_layers is not None:
             print("Layer replacements:")
-            for i in replace_layers:
-                self.replace_custom_layer(layers, i)
+            if self.custom_layer_name == "Dropout":
+                for i in replace_layers:
+                    if i == 1 and self.dropout_replacement_2_p is not None:
+                        self.replace_custom_layer(layers, i, self.dropout_replacement_2_p)
+                    else:
+                        self.replace_custom_layer(layers, i)
         
         if self.use_ecoc:
             # replace final linear layer with 16 output_dim
@@ -128,9 +136,12 @@ class CustomModel(BasicLightningModel):
 
         self.report_state(model_name, custom_layer_name, insert_layers, self.custom_layer)
 
-    def replace_custom_layer(self, layers, i):
+    def replace_custom_layer(self, layers, i, replace_with=None):
+        if replace_with is not None:
+            layer = copy.copy(replace_with)
+        else:
+            layer = copy.copy(self.custom_layer)
         print(f"{layers[i]} at index {i} replaced with {self.custom_layer_name}")
-        layer = copy.copy(self.custom_layer)
         layer.set_index(i)
         layers[i] = layer
 
@@ -147,19 +158,7 @@ class CustomModel(BasicLightningModel):
         if self.preprocess_during_forward and not self.using_robustbench:
             x = transforms.Normalize(self.pretrained_means, self.pretrained_stds)(x)
         x = self.model(x)
-        '''
-        if self.use_ecoc:
-            # y is batch x 1, y_hat batch x 16
-            # first, do tanh on y
-            self.M = self.M.to(self.device)
-            x = torch.tanh(x)
-            # y is max of 0 and matrix mult of y and self.M
-            x = torch.max(torch.zeros((x.shape[0], self.M.T.shape[1])).to(self.device), torch.matmul(x, self.M.T))
-            # y is now batch x 10
-            # normalize by dividing by max of each row
-            x = x / torch.max(x, dim=1, keepdim=True)[0] # batch x 10 (class probs)
-           # x = torch.argmax(x, dim=1)
-        '''
+
         return x
 
     def report_state(self, model_name, custom_layer_name, insert_layers, custom_layer):
