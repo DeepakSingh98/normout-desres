@@ -29,7 +29,7 @@ parser.add_argument("--get-robustbench-layers", default=False, action="store_tru
 parser.add_argument("--pretrained", default=False, action="store_true", help="Use pretrained model")
 parser.add_argument("--topk-k", type=int, default=10, help="k value for TopK")
 parser.add_argument("--dropout-p", type=float, default=0.5, help="p value for Dropout (probability of neuron being dropped)")
-parser.add_argument("--dropout-replacement-2-p", type=float, default=0.5, help="p value for second Dropout replacement (used for p-sweeping)")
+parser.add_argument("--dropout-replacement-2-p", type=float, default=-1, help="p value for second Dropout replacement (used for p-sweeping)")
 parser.add_argument("--no-batch-norm", default=False, action="store_true", help="Don't use batch norm (default False)")
 parser.add_argument("--replace-layers", type=int, nargs="+", default=None, help="layer indices at which the layer is placed with the custom layer (NOTE: happens after removal and insertion)")
 parser.add_argument("--remove-layers", type=int, nargs="+", default=None, help="layer indices at which the layer is removed from the model; give vals in ascending order")

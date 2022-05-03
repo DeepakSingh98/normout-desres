@@ -67,7 +67,6 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
 
     def training_step(self, batch, batch_idx):
         x, y = batch
-        #y = self.encode_data(y)
         y_hat = self(x)
         loss = self.calculate_loss(y, y_hat)
         self.train_acc(y_hat, y)

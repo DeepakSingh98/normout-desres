@@ -68,7 +68,7 @@ class CustomModel(BasicLightningModel):
             self.custom_layer = TopK(topk_k, on_at_inference, log_input_stats, log_sparsity)
         elif custom_layer_name == "Dropout":
             self.custom_layer = CustomDropout(dropout_p, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
-            if dropout_replacement_2_p is not None:
+            if dropout_replacement_2_p != -1:
                 self.dropout_replacement_2_p = CustomDropout(dropout_replacement_2_p, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         elif custom_layer_name == "ExpOut":
             self.custom_layer = ExpOut()
@@ -122,7 +122,7 @@ class CustomModel(BasicLightningModel):
             print("Layer replacements:")
             if self.custom_layer_name == "Dropout":
                 for i in replace_layers:
-                    if i == 1 and self.dropout_replacement_2_p is not None:
+                    if i == 1 and self.dropout_replacement_2_p != -1:
                         self.replace_custom_layer(layers, i, self.dropout_replacement_2_p)
                     else:
                         self.replace_custom_layer(layers, i)
