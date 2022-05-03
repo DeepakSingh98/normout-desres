@@ -3,16 +3,13 @@ import torch.nn as nn
 
 from custom_layers.custom_layer import CustomLayer
 
+
 class SigmoidOut(nn.Module, CustomLayer):
     """
-    Sets ith neurons to zero with probability p_i, where p_i is the sigmoid of the ith neuron.
+    Sets ith neurons to zero with probability p_i, where p_i is the sigmoid of the standardized ith neuron.
     """
-    def __init__(
-        self, 
-        log_sparsity_bool: bool,
-        log_input_stats_bool: bool,
-        **kwargs
-    ):
+
+    def __init__(self, log_sparsity_bool: bool, log_input_stats_bool: bool, **kwargs):
 
         nn.Module.__init__(self)
         CustomLayer.__init__(self, custom_layer_name="SigmoidOut")
