@@ -22,8 +22,10 @@ class SigmoidOut(nn.Module, CustomLayer):
         if self.log_input_stats_bool:
             self.log_input_stats(x)
         if self.training:
-            # dropout x with probability sigmoid(x)
-            norm_x = torch.abs(torch.sigmoid(x))
+            # dropout x with probability sigmoid(normalized(x))
+            # x_prime is the standard normalized x (mean 0, std 1) along the batch dimension
+            x_prime = (x - torch.mean(x, dim=0)) / torch.std(x, dim=0)
+            norm_x = torch.abs(torch.sigmoid(x_prime))
             x_mask = torch.rand_like(x) < norm_x
             x = x * x_mask
         if self.log_sparsity_bool:
