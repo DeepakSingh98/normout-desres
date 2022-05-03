@@ -4,6 +4,7 @@ from custom_layers.custom_dropout import CustomDropout
 from custom_layers.custom_layer import CustomLayer
 from custom_layers.expout import ExpOut
 from custom_layers.normout import NormOut
+from custom_layers.sigmoid_out import SigmoidOut
 from custom_layers.topk import TopK
 from custom_layers.sigmoid import Sigmoid
 from models.resnet_layers import resnet_layers
@@ -72,6 +73,8 @@ class CustomModel(BasicLightningModel):
                 self.dropout_replacement_2_p = CustomDropout(dropout_replacement_2_p, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         elif custom_layer_name == "ExpOut":
             self.custom_layer = ExpOut()
+        elif custom_layer_name == "SigmoidOut":
+            self.custom_layer = SigmoidOut(log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         else:
             raise ValueError("custom_layer_name must be 'ReLU', 'NormOut', or 'TopK'")
         
