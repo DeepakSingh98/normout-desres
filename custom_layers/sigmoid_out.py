@@ -1,3 +1,4 @@
+from os import truncate
 from tkinter import X
 import torch
 import torch.nn as nn
@@ -10,7 +11,7 @@ class SigmoidOut(nn.Module, CustomLayer):
     Sets ith neurons to zero with probability p_i, where p_i is the sigmoid of the standardized ith neuron.
     """
 
-    def __init__(self, use_abs: bool, log_sparsity_bool: bool, log_input_stats_bool: bool, normalization_type: str, **kwargs):
+    def __init__(self, use_abs: bool, normalization_type: str, log_sparsity_bool: bool, log_input_stats_bool: bool, **kwargs):
 
         nn.Module.__init__(self)
         CustomLayer.__init__(self, custom_layer_name="SigmoidOut")
@@ -28,35 +29,37 @@ class SigmoidOut(nn.Module, CustomLayer):
 
             if self.use_abs:
                 x_prime = abs(x)
+            else:
+                x_prime = x
 
-            if self.normalization_type == "temporal_sigmoid":
+            if self.normalization_type == "TemporalSigmoid":
                 # Standardize across batch
-                x_prime = (x - torch.mean(x, dim=0)) / torch.std(x, dim=0)
+                x_prime = (x_prime - torch.mean(x_prime, dim=0, keepdim=True)) / torch.std(x_prime, dim=0, keepdim=truncate)
                 norm_x = torch.sigmoid(x_prime)
             
-            elif self.normalization_type == "temporal_max":
+            elif self.normalization_type == "TemporalMax":
                 # Take max across batch
                 x_prime_max = torch.max(x_prime, dim=0, keepdim=True)[0]
                 norm_x = x_prime / x_prime_max
 
-            elif self.normalization_type == "spatial_sigmoid":
+            elif self.normalization_type == "SpatialSigmoid":
                 # Standardize across layer
-                x_prime = (x - torch.mean(x, dim=1)) / torch.std(x, dim=1)
+                x_prime = (x_prime - torch.mean(x_prime, dim=1, keepdim=True)) / torch.std(x_prime, dim=1, keepdim=True)
                 norm_x = torch.sigmoid(x_prime)
 
-            elif self.normalization_type == "spatial_max":
+            elif self.normalization_type == "SpatialMax":
                 # Take max across layer
                 x_prime_max =  torch.max(x_prime, dim=1, keepdim=True)[0]
                 norm_x = x_prime / x_prime_max
             
-            elif self.normalization_type == "spatiotemporal_sigmoid":
+            elif self.normalization_type == "SpatiotemporalSigmoid":
                 # Standardize across batch
-                x_prime = (x - torch.mean(x, dim=0)) / torch.std(x, dim=0)
+                x_prime = (x_prime - torch.mean(x_prime, dim=0, keepdim=True)) / torch.std(x_prime, dim=0, keepdim=True)
                 # Standardize across layer
-                x_prime = (x_prime - torch.mean(x_prime, dim=1)) / torch.std(x_prime, dim=1)
+                x_prime = (x_prime - torch.mean(x_prime, dim=1, keepdim=True)) / torch.std(x_prime, dim=1, keepdim=True)
                 norm_x = torch.sigmoid(x_prime)
 
-            elif self.normalization_type == "spatiotemporal_max":
+            elif self.normalization_type == "SpatiotemporalMax":
                 # Take max across batch
                 x_prime_max = torch.max(x_prime, dim=0, keepdim=True)[0]
                 # Take max across layer
@@ -71,5 +74,7 @@ class SigmoidOut(nn.Module, CustomLayer):
 
         if self.log_sparsity_bool:
             self.log_sparsity(x)
-            
+        
+        self.log_input_stats(x)
+
         return x

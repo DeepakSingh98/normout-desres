@@ -15,7 +15,7 @@ def set_tags(args):
         tags.append("pretrained")
     if not args.no_data_augmentation:
         tags.append("DataAug")
-    if not args.no_abs and args.custom_layer_name == "NormOut":
+    if not args.no_abs and (args.custom_layer_name == "NormOut" or args.custom_layer_name == "SigmoidOut"):
         tags.append(f'use_abs')
     if args.custom_layer_name == "NormOut":
         tags.append(f"{args.max_type}")
@@ -27,4 +27,6 @@ def set_tags(args):
         tags.append(f"inserted_{'_'.join([str(i) for i in args.insert_layers])}")
     if args.remove_layers is not None:
         tags.append(f"removed_{'_'.join([str(i) for i in args.remove_layers])}")
+    if args.custom_layer_name == "SigmoidOut":
+        tags.append(f"{args.normalization_type}")
     return tags

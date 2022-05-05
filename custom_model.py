@@ -42,6 +42,7 @@ class CustomModel(BasicLightningModel):
         no_log_sparsity,
         log_input_stats,
         no_ecoc,
+        normalization_type,
         **kwargs
     ):
         self.use_ecoc = not no_ecoc
@@ -71,7 +72,7 @@ class CustomModel(BasicLightningModel):
         elif custom_layer_name == "ExpOut":
             self.custom_layer = ExpOut()
         elif custom_layer_name == "SigmoidOut":
-            self.custom_layer = SigmoidOut(log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
+            self.custom_layer = SigmoidOut(use_abs, normalization_type, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         else:
             raise ValueError("custom_layer_name must be 'ReLU', 'NormOut', or 'TopK'")
         

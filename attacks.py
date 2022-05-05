@@ -108,8 +108,8 @@ class Attacks(ABC):
                 self.untargeted_pgd_attack(x, y)
             
             if self.use_adversarial_pgd_t:
-                for i in range(10):
-                    self.targeted_pgd_attack(x, y, i)
+                accuracies = torch.tensor([self.targeted_pgd_attack(x, y, i) for i in range(10)])
+                self.log(f"PGD Targeted Accuracy", accuracies)
             
             if self.use_fab_attack:
                 self.untargeted_fab_attack(x, y)
@@ -184,6 +184,7 @@ class Attacks(ABC):
         )
         y_hat_adv = self(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, f"Targeted PGD i={i}")
+        return (y_hat_adv.argmax(dim=1) == y).float().mean()
         
     def square_attack(self, x, y):
         """
