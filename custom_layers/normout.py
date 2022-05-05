@@ -51,7 +51,7 @@ class NormOut(nn.Module, CustomLayer):
                 x_prime = x
 
             if self.max_type == "spatial":
-                x_prime_max = torch.max(x_prime, dim=-2, keepdim=True)[0]
+                x_prime_max = torch.max(x_prime, dim=-2, keepdim=True)[0] #TODO: check if this is SpatioTemporal
                 x_prime_max = torch.max(x_prime_max, dim=-1, keepdim=True)[0]
                 norm_x = x_prime / x_prime_max
             elif self.max_type == "channel":
