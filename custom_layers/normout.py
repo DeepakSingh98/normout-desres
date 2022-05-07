@@ -50,7 +50,7 @@ class NormOut(nn.Module, CustomLayer):
             else:
                 x_prime = x
 
-            if self.max_type == "spatial":
+            if self.max_type == "spatial": # Note this is really spatiotemporal
                 x_prime_max = torch.max(x_prime, dim=-2, keepdim=True)[0]
                 x_prime_max = torch.max(x_prime_max, dim=-1, keepdim=True)[0]
                 norm_x = x_prime / x_prime_max

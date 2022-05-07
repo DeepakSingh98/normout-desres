@@ -4,9 +4,8 @@ from pytorch_lightning.loggers import WandbLogger
 
 from robustbench.eval import benchmark
 from cleverhans.torch.attacks.fast_gradient_method import fast_gradient_method
-from cleverhans.torch.attacks.projected_gradient_descent import (
-    projected_gradient_descent,
-)
+from cleverhans.torch.attacks.projected_gradient_descent import projected_gradient_descent
+from cleverhans.torch.attacks.carlini_wagner_l2 import carlini_wagner_l2
 from robustbench.data import load_cifar10c, load_cifar10
 from robustbench.utils import clean_accuracy
 
@@ -26,6 +25,8 @@ class Attacks(ABC):
         no_fgm,
         no_pgd_ce,
         no_pgd_t,
+        no_cw_l2_ce,
+        no_cw_l2_t,
         no_fab,
         no_fab_t,
         no_square_attack,
@@ -45,6 +46,8 @@ class Attacks(ABC):
         self.use_adversarial_fgm = not no_fgm
         self.use_adversarial_pgd_ce = not no_pgd_ce
         self.use_adversarial_pgd_t = not no_pgd_t
+        self.use_cw_l2_ce = not no_cw_l2_ce
+        self.use_cw_l2_t = not no_cw_l2_t
         self.use_fab_attack = not no_fab
         self.use_fab_t_attack = not no_fab_t
         self.use_square_attack = not no_square_attack
@@ -61,6 +64,8 @@ class Attacks(ABC):
             self.use_adversarial_fgm = False
             self.use_adversarial_pgd_ce = False
             self.use_adversarial_pgd_t = False
+            self.use_cw_l2_ce = False
+            self.use_cw_l2_t = False
             self.use_square_attack = False
             self.use_randomized_attack = False
             self.use_robustbench = False
@@ -82,7 +87,7 @@ class Attacks(ABC):
             acc = clean_accuracy(self, x, y)
             self.log(f"Clean Accuracy", acc)
 
-            # do oblation to make sure this needs to be here
+            # do ablation to make sure this needs to be here
             torch.set_grad_enabled(True)
             x.requires_grad = True
 
@@ -110,6 +115,13 @@ class Attacks(ABC):
             if self.use_adversarial_pgd_t:
                 for i in range(10):
                     self.targeted_pgd_attack(x, y, i)
+            
+            if self.use_cw_l2_ce:
+                self.untargeted_cw_l2_attack(x, y)
+            
+            if self.use_cw_l2_t:
+                for i in range(10):
+                    self.targeted_cw_l2_attack(x, y, i)
             
             if self.use_fab_attack:
                 self.untargeted_fab_attack(x, y)
@@ -166,9 +178,7 @@ class Attacks(ABC):
         Performs an untargeted projected gradient descent attack on the model as described in
         https://arxiv.org/abs/1706.06083
         """
-        x_adv = projected_gradient_descent(
-            self, x, self.adv_eps, 0.007, self.pgd_steps, np.inf
-        )
+        x_adv = projected_gradient_descent(self, x, self.adv_eps, 0.007, self.pgd_steps, np.inf)
         y_hat_adv = self(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "Untargeted PGD")
     
@@ -179,12 +189,30 @@ class Attacks(ABC):
         """
         y_target = torch.full((self.batch_size,), i) # (y + 1) % self.num_classes
         y_target = y_target.to(self.device)
-        x_adv = projected_gradient_descent(
-            self, x, self.adv_eps, 0.007, self.pgd_steps, np.inf, y=y_target, targeted=True
-        )
+        x_adv = projected_gradient_descent(self, x, self.adv_eps, 0.007, self.pgd_steps, np.inf, y=y_target, targeted=True)
         y_hat_adv = self(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, f"Targeted PGD i={i}")
-        
+    
+    def untargeted_cw_l2_attack(self, x, y):
+        """ 
+        Performs an untargeted Carlini-Wagner L2 attack on the model as described in
+        https://arxiv.org/pdf/1608.04644.pdf
+        """
+        x_adv = carlini_wagner_l2(self, x, self.num_classes)
+        y_hat_adv = self(x_adv)
+        self.log_attack_stats(x_adv, y_hat_adv, y, "Untargeted CW L2")
+    
+    def targeted_cw_l2_attack(self, x, y, i):
+        """ 
+        Performs a targeted Carlini-Wagner L2 attack on the model as described in
+        https://arxiv.org/pdf/1608.04644.pdf
+        """
+        y_target = torch.full((self.batch_size,), i) # (y + 1) % self.num_classes
+        y_target = y_target.to(self.device)
+        x_adv = carlini_wagner_l2(self, x, self.num_classes, y=y_target, targeted=True)
+        y_hat_adv = self(x_adv)
+        self.log_attack_stats(x_adv, y_hat_adv, y, "Untargeted CW L2")
+
     def square_attack(self, x, y):
         """
         Runs a black box square attack with AutoAttack.

@@ -44,6 +44,8 @@ parser.add_argument("--all-attacks-off", default=False, action="store_true", hel
 parser.add_argument("--no-fgm", default=False, action="store_true", help="Don't use adversarial fgm (default False)")
 parser.add_argument("--no-pgd-ce", default=False, action="store_true", help="Don't use adversarial pgd-ce (default False)")
 parser.add_argument("--no-pgd-t", default=False, action="store_true", help="Don't use adversarial pgd-t (default False)")
+parser.add_argument("--no-cw-l2-ce", default=False, action="store_true", help="Don't use untargeted Carlini wagner L2 attacks (default False)")
+parser.add_argument("--no-cw-l2-t", default=False, action="store_true", help="Don't use targeted Carlini wagner L2 attacks (default False)")
 parser.add_argument("--no-fab",  default=True, action="store_true", help="Don't use Untargeted FAB attack (default False)")
 parser.add_argument("--no-fab-t",  default=True, action="store_true", help="Don't use FAB-T attack (default False)")
 parser.add_argument("--no-square-attack", default=True, action="store_true", help="Don't use square attack (default False)")
