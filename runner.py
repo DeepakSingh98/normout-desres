@@ -49,8 +49,9 @@ parser.add_argument("--no-cw-l2-t", default=False, action="store_true", help="Do
 parser.add_argument("--no-fab",  default=True, action="store_true", help="Don't use Untargeted FAB attack (default False)")
 parser.add_argument("--no-fab-t",  default=True, action="store_true", help="Don't use FAB-T attack (default False)")
 parser.add_argument("--no-square-attack", default=True, action="store_true", help="Don't use square attack (default False)")
-parser.add_argument("--no-randomized-attack", default=False, action="store_true", help="Don't use randomized attacks (default False)") #TODO make False default
-parser.add_argument("--no-robustbench", default=False, action="store_true", help="Don't use robustbench autoattack (default False)")
+parser.add_argument("--no-randomized-attack", default=True, action="store_true", help="Don't use randomized attacks (default False)") #TODO make False default
+parser.add_argument("--no-robustbench-linf", default=False, action="store_true", help="Don't use robustbench Linf autoattack (default False)")
+parser.add_argument("--no-robustbench-l2", default=False, action="store_true", help="Don't use robustbench L2 autoattack (default False)")
 parser.add_argument("--no-salt-and-pepper-attack", default=True, action="store_true", help="Don't use salt and pepper attack (default False)")
 parser.add_argument("--adv-eps", type=float, default=0.03, help="adversarial epsilon (default 0.03)")
 parser.add_argument("--pgd-steps", type=int, default=10, help="number of steps for PGD (default 10)")

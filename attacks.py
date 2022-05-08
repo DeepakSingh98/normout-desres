@@ -5,7 +5,7 @@ from pytorch_lightning.loggers import WandbLogger
 from robustbench.eval import benchmark
 from cleverhans.torch.attacks.fast_gradient_method import fast_gradient_method
 from cleverhans.torch.attacks.projected_gradient_descent import projected_gradient_descent
-from cleverhans.torch.attacks.carlini_wagner_l2 import carlini_wagner_l2
+from cw_attacks import carlini_wagner_l2
 from robustbench.data import load_cifar10c, load_cifar10
 from robustbench.utils import clean_accuracy
 
@@ -25,13 +25,14 @@ class Attacks(ABC):
         no_fgm,
         no_pgd_ce,
         no_pgd_t,
-        no_cw_l2_ce,
-        no_cw_l2_t,
+        no_cw_L2_ce,
+        no_cw_L2_t,
         no_fab,
         no_fab_t,
         no_square_attack,
         no_randomized_attack,
-        no_robustbench,
+        no_robustbench_linf,
+        no_robustbench_l2,
         no_salt_and_pepper_attack,
         corruption_types,
         corruption_severity,
@@ -52,7 +53,8 @@ class Attacks(ABC):
         self.use_fab_t_attack = not no_fab_t
         self.use_square_attack = not no_square_attack
         self.use_randomized_attack = not no_randomized_attack
-        self.use_robustbench = not no_robustbench
+        self.use_robustbench_linf = not no_robustbench_linf
+        self.use_robustbench_l2 = not no_robustbench_l2
         self.use_salt_and_pepper_attack = not no_salt_and_pepper_attack
         self.adv_eps = adv_eps
         self.pgd_steps = pgd_steps
@@ -68,7 +70,8 @@ class Attacks(ABC):
             self.use_cw_l2_t = False
             self.use_square_attack = False
             self.use_randomized_attack = False
-            self.use_robustbench = False
+            self.use_robustbench_linf = False
+            self.use_robustbench_l2 = False
             self.use_salt_and_pepper_attack = False
 
     def on_validation_epoch_end(self):
@@ -91,8 +94,8 @@ class Attacks(ABC):
             torch.set_grad_enabled(True)
             x.requires_grad = True
 
-            if self.use_robustbench:
-                print("Evaluating RobustBenchmark...")
+            if self.use_robustbench_linf:
+                print("Evaluating RobustBenchmark Linf...")
                 clean_acc, robust_acc = benchmark(self,
                                                   dataset='cifar10',
                                                   threat_model='Linf', 
@@ -100,8 +103,20 @@ class Attacks(ABC):
                                                   n_examples=40,
                                                   device=self.device,
                                                   ) 
-                self.log("RobustBench Clean Accuracy", clean_acc)
-                self.log("RobustBench Robust Accuracy (Linf 8/255)", robust_acc)
+                self.log("RobustBench Linf Clean Accuracy", clean_acc)
+                self.log("RobustBench Linf Robust Accuracy (Linf 8/255)", robust_acc)
+            
+            if self.use_robustbench_l2:
+                print("Evaluating RobustBenchmark L2...")
+                clean_acc, robust_acc = benchmark(self,
+                                                  dataset='cifar10',
+                                                  threat_model='L2', 
+                                                  eps=0.5,
+                                                  n_examples=40,
+                                                  device=self.device,
+                                                  ) 
+                self.log("RobustBench L2 Clean Accuracy", clean_acc)
+                self.log("RobustBench L2 Robust Accuracy (L2 0.5)", robust_acc)
 
             if self.corruption_types is not None:
                 self.test_corruption()
@@ -116,12 +131,11 @@ class Attacks(ABC):
                 for i in range(10):
                     self.targeted_pgd_attack(x, y, i)
             
-            if self.use_cw_l2_ce:
+            if self.use_cw_l2_ce and self.current_epoch != 0:
                 self.untargeted_cw_l2_attack(x, y)
             
-            if self.use_cw_l2_t:
-                for i in range(10):
-                    self.targeted_cw_l2_attack(x, y, i)
+            if self.use_cw_l2_t and self.current_epoch != 0:
+                self.targeted_cw_l2_attack(x, y)
             
             if self.use_fab_attack:
                 self.untargeted_fab_attack(x, y)
@@ -198,20 +212,21 @@ class Attacks(ABC):
         Performs an untargeted Carlini-Wagner L2 attack on the model as described in
         https://arxiv.org/pdf/1608.04644.pdf
         """
-        x_adv = carlini_wagner_l2(self, x, self.num_classes)
+        x_adv = carlini_wagner_l2(self.forward, x, self.num_classes)
         y_hat_adv = self(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "Untargeted CW L2")
     
-    def targeted_cw_l2_attack(self, x, y, i):
+    def targeted_cw_l2_attack(self, x, y):
         """ 
         Performs a targeted Carlini-Wagner L2 attack on the model as described in
         https://arxiv.org/pdf/1608.04644.pdf
         """
-        y_target = torch.full((self.batch_size,), i) # (y + 1) % self.num_classes
+        #y_target = torch.full((self.batch_size,), i) # 
+        y_target = (y + 1) % self.num_classes
         y_target = y_target.to(self.device)
         x_adv = carlini_wagner_l2(self, x, self.num_classes, y=y_target, targeted=True)
         y_hat_adv = self(x_adv)
-        self.log_attack_stats(x_adv, y_hat_adv, y, "Untargeted CW L2")
+        self.log_attack_stats(x_adv, y_hat_adv, y, "Targeted CW L2")
 
     def square_attack(self, x, y):
         """
