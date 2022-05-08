@@ -95,7 +95,8 @@ class CustomModel(BasicLightningModel):
             layers = resnet_layers(model_name, pretrained, self.num_classes)
         elif model_name in [
             "Carmon2019Unlabeled",
-            "Standard"
+            "Standard",
+            "Rebuffi2021Fixing_70_16_cutmix_extra"
             ]:
             self.model = robustbench_model(model_name, get_robustbench_layers)
             if self.custom_layer is not None:
