@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import wandb
 
 from custom_layers.custom_layer import CustomLayer
 
@@ -17,6 +18,7 @@ class CustomDropout(nn.Module, CustomLayer):
         self.log_sparsity_bool = log_sparsity_bool
 
     def forward(self, x):
+
         if self.log_input_stats_bool:
             self.log_input_stats(x)
 
