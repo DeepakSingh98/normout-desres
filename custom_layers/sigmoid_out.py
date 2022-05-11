@@ -34,7 +34,7 @@ class SigmoidOut(nn.Module, CustomLayer):
 
             if self.normalization_type == "TemporalSigmoid":
                 # Standardize across batch
-                x_prime = (x_prime - torch.mean(x_prime, dim=0, keepdim=True)) / torch.std(x_prime, dim=0, keepdim=truncate)
+                x_prime = (x_prime - torch.mean(x_prime, dim=0, keepdim=True)) / torch.std(x_prime, dim=0, keepdim=True)
                 norm_x = torch.sigmoid(x_prime)
             
             elif self.normalization_type == "TemporalMax":
