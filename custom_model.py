@@ -127,6 +127,9 @@ class CustomModel(BasicLightningModel):
                         self.replace_custom_layer(layers, i, self.dropout_replacement_2_p)
                     else:
                         self.replace_custom_layer(layers, i)
+            else:
+                for i in replace_layers:
+                    self.replace_custom_layer(layers, i)
         
         if self.use_ecoc:
             # replace final linear layer with 16 output_dim
