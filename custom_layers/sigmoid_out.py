@@ -1,5 +1,4 @@
 from os import truncate
-from tkinter import X
 import torch
 import torch.nn as nn
 
