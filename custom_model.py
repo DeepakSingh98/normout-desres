@@ -4,8 +4,8 @@ from custom_layers.custom_dropout import CustomDropout
 from custom_layers.custom_layer import CustomLayer
 from custom_layers.expout import ExpOut
 from custom_layers.normout import NormOut
+from custom_layers.sigmoid_out import SigmoidOut
 from custom_layers.topk import TopK
-from custom_layers.sigmoid import Sigmoid
 from models.resnet_layers import resnet_layers
 from models.robustbench_model import robustbench_model
 from models.vgg16_layers import vgg16_layers
@@ -42,6 +42,7 @@ class CustomModel(BasicLightningModel):
         no_log_sparsity,
         log_input_stats,
         no_ecoc,
+        normalization_type,
         **kwargs
     ):
         self.use_ecoc = not no_ecoc
@@ -62,8 +63,6 @@ class CustomModel(BasicLightningModel):
             self.custom_layer = nn.ReLU(True)
         elif custom_layer_name == "NormOut":
             self.custom_layer = NormOut(use_abs, max_type, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
-        elif custom_layer_name == "Sigmoid":
-            custom_layer_name = Sigmoid(log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         elif custom_layer_name == "TopK":
             self.custom_layer = TopK(topk_k, on_at_inference, log_input_stats, log_sparsity)
         elif custom_layer_name == "Dropout":
@@ -72,6 +71,8 @@ class CustomModel(BasicLightningModel):
                 self.dropout_replacement_2_p = CustomDropout(dropout_replacement_2_p, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         elif custom_layer_name == "ExpOut":
             self.custom_layer = ExpOut()
+        elif custom_layer_name == "SigmoidOut":
+            self.custom_layer = SigmoidOut(use_abs, normalization_type, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         else:
             raise ValueError("custom_layer_name must be 'ReLU', 'NormOut', or 'TopK'")
         

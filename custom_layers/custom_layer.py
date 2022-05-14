@@ -10,12 +10,23 @@ class CustomLayer(ABC):
         self.use_abs = use_abs
         self.max_type = max_type
         self.on_at_inference = on_at_inference
+        self.log_input_sparsity = True
 
     def set_index(self, num_id):
         self.num_id = num_id
 
     @abstractmethod
     def forward(self, x):
+        if self.log_input_sparsity:
+            if len(x.shape) == 2:
+                sparsity_vector = (x == 0).sum(dim=1)/x.shape[1]
+            elif len(x.shape) == 4:
+                sparsity_vector = (x == 0).sum(dim=(1,2,3))/(x.shape[1]*x.shape[2]*x.shape[3])
+            else:
+                raise ValueError("Sparsity can only be computed for 2D or 4D tensors")
+            wandb.log({f"Input Sparsity {self.num_id}": sparsity_vector}, commit=False)
+            wandb.log({f"Input Sparsity Mean {self.num_id}": sparsity_vector.mean()}, commit=False)
+    
         raise NotImplementedError("Forward pass not implemented")
 
     def log_sparsity(self, x: torch.Tensor):
@@ -29,6 +40,10 @@ class CustomLayer(ABC):
         wandb.log({f"{self.custom_layer_name} {self.num_id} Sparsity Mean": sparsity_vector.mean()}, commit=False)
     
     def log_input_stats(self, x: torch.Tensor):
+
+        sparsity_vector = (x == 0).sum(dim=1)/x.shape[1]
+        wandb.log({f"{self.custom_layer_name} {self.num_id} Sparsity": sparsity_vector}, commit=False)
+        wandb.log({f"{self.custom_layer_name} {self.num_id} Sparsity Mean": sparsity_vector.mean()}, commit=False)
 
         if self.max_type == "spatial":
             x_max = torch.max(x, dim=-2, keepdim=True)[0]

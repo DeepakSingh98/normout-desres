@@ -10,7 +10,7 @@ import wandb
 # parse arguments
 # general settings
 parser = argparse.ArgumentParser()
-parser.add_argument("--epochs", type=int, default=200, help="number of epochs (default 100)")
+parser.add_argument("--epochs", type=int, default=100, help="number of epochs (default 100)")
 parser.add_argument("--batch-size", type=int, default=256, help="batch size (default 256)")
 parser.add_argument("--num-workers", type=int, default=4, help="number of workers used for data loading (default 4)")
 parser.add_argument("--num-gpus", type=int, default=1, help="number of gpus to use (default 1)")
@@ -23,7 +23,7 @@ parser.add_argument("--weight-decay", type=float, default=0.0001, help="weight d
 parser.add_argument("--custom-tag", type=str, default=None, help="custom tag to be added to wandb log")
 # model settings
 parser.add_argument("--model-name", type=str, default="VGG16", help="model name (default VGG16, supports resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, wide_resnet101_2)")
-parser.add_argument("--custom-layer-name", type=str, default=None, help="custom layer (default None, supports 'ReLU', 'NormOut', 'Dropout', 'Sigmoid' , and 'TopK')")
+parser.add_argument("--custom-layer-name", type=str, default=None, help="custom layer (default None, supports 'ReLU', 'NormOut', 'Dropout', 'SigmoidOut', and 'TopK')")
 parser.add_argument("--use-robustbench-data", default=False, action="store_true", help="Use robustbench data")
 parser.add_argument("--get-robustbench-layers", default=False, action="store_true", help="Get robustbench model layers (default False)")
 parser.add_argument("--pretrained", default=False, action="store_true", help="Use pretrained model")
@@ -39,6 +39,8 @@ parser.add_argument("--no-abs", default=False, action="store_true", help="Don't 
 parser.add_argument("--max-type", type=str, default="spatial", help="Type of max to use in NormOut (default spatial, supports channel, global)")
 parser.add_argument("--on-at-inference", default=False, action="store_true", help="Turn layer on at inference time (default False)")
 parser.add_argument("--normout-delay-epochs", type=int, default=0, help="number of epochs to delay using normout")
+# SigmoidOut settings
+parser.add_argument("--normalization-type", type=str, default="SpatialMax", help="type of normalization to use (defautl SpatialMax), supports SpatialMax, SpatialSigmoid, TemporalMax, TemporalSigmoid, SpatiotemporalSigmoid, SpatiotemporalMax")
 # attacks
 parser.add_argument("--all-attacks-off", default=False, action="store_true", help="Turn all attacks off (default False)")
 parser.add_argument("--no-fgm", default=False, action="store_true", help="Don't use adversarial fgm (default False)")
@@ -58,6 +60,7 @@ parser.add_argument("--pgd-steps", type=int, default=10, help="number of steps f
 parser.add_argument("--corruption-types", type=str, nargs="+", default=None, help="type of corruption to add (supports shot_noise, motion_blur, snow, pixelate, gaussian_noise, defocus_blur, brightness, fog, zoom_blur, frost, glass_blur, impulse_noise, contrast, jpeg_compression, elastic_transform")
 parser.add_argument("--corruption-severity", type=int, default=1, help="Severity of corruption, supports ints 1 through 5 (default 1)")
 parser.add_argument("--log-adversarial-examples", default=False, action="store_true", help="Log adversarial examples (default False)")
+
 # logging
 parser.add_argument("--no-log-sparsity", default=False, action="store_true", help="Don't log sparsity (default False")
 parser.add_argument("--log-input-stats", default=False, action="store_true", help="Log input stats (default False)")

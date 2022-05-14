@@ -128,8 +128,8 @@ class Attacks(ABC):
                 self.untargeted_pgd_attack(x, y)
             
             if self.use_adversarial_pgd_t:
-                for i in range(10):
-                    self.targeted_pgd_attack(x, y, i)
+                accuracies = torch.tensor([self.targeted_pgd_attack(x, y, i) for i in range(10)])
+                self.log(f"PGD Targeted Accuracy", accuracies)
             
             if self.use_cw_l2_ce and self.current_epoch != 0:
                 self.untargeted_cw_l2_attack(x, y)
