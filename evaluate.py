@@ -29,6 +29,7 @@ class Benchmarker():
         special_name=None,
         device='cuda', 
         batch_size=128,
+        log_to_wandb=False,
     ):
 
         self.model_name = model_name
@@ -38,6 +39,7 @@ class Benchmarker():
         self.preprocess_stds = preprocess_stds
         self.device = device
         self.batch_size = batch_size
+        self.log_to_wandb = log_to_wandb
     
         # load data
         if self.dataset == "CIFAR10":
@@ -70,21 +72,22 @@ class Benchmarker():
             self.model.load_state_dict(loaded['state_dict'])
 
         # initialize wandb
-        name = special_name if (special_name is not None and special_name != "") else self.model_name
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        wandb.init(
-            name=(name + "-" + timestamp),
-            project="normout",
-            entity="normout",
-            tags=["benchmark_run"],
-            config=args
-            )       
+        if self.log_to_wandb:
+            name = special_name if (special_name is not None and special_name != "") else self.model_name
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            wandb.init(
+                name=(name + "-" + timestamp),
+                project="normout",
+                entity="normout",
+                tags=["benchmark_run"],
+                config=args
+                )       
 
     def forward_with_preprocessing(self, x):
         if self.preprocess_means is not None and self.preprocess_stds is not None:
             x = transforms.Normalize(self.preprocess_means, self.preprocess_stds)(x)
         return self.model(x)
-    
+
     def benchmark(self):
         """
         Evaluates all attacks on the entire validation set
@@ -97,7 +100,8 @@ class Benchmarker():
         # report clean accuracy
         clean_acc = clean_accuracy(self.forward_with_preprocessing, self.test_x, self.test_y)
         print(f"Clean accuracy: {clean_acc}")
-        wandb.log({"Clean Accuracy": clean_acc})
+        if self.log_to_wandb:
+            wandb.log({"Clean Accuracy": clean_acc})
 
         # fgm
         self.fgsm_attack(self.test_x, self.test_y, eps=0.03, norm=np.inf)
@@ -116,9 +120,10 @@ class Benchmarker():
         self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=2)
 
     def log_attack_results(self, acc, attack_name):
-        wandb.log(
-            {f"{attack_name} Accuracy": acc}
-        )
+        if self.log_to_wandb:
+            wandb.log(
+                {f"{attack_name} Accuracy": acc}
+            )
         print(f"{attack_name} Accuracy: {acc}")
 
     def fgsm_attack(self, x, y, eps, norm=np.inf):
@@ -131,11 +136,11 @@ class Benchmarker():
             x_batch = x[i * self.batch_size:(i + 1) * self.batch_size]
             y_batch = y[i * self.batch_size:(i + 1) * self.batch_size]
             x_adv = fast_gradient_method(self.forward_with_preprocessing, x_batch, eps, norm=norm)
-            y_hat_adv = self.model(x_adv)
+            y_hat_adv = self.forward_with_preprocessing(x_adv)
             accs.append(
                 (y_hat_adv.argmax(dim=1) == y_batch).float().mean()
             )
-        print("FGSM accs per batch", [acc.item() for acc in accs])
+        # print("FGSM accs per batch", [acc.item() for acc in accs])
         self.log_attack_results(sum(accs)/len(accs), f"FGSM, norm={norm}")
         
     def untargeted_pgd_attack(self, x, y, eps, eps_iter, nb_iter, norm=np.inf):
@@ -148,7 +153,7 @@ class Benchmarker():
             x_batch = x[i * self.batch_size:(i + 1) * self.batch_size]
             y_batch = y[i * self.batch_size:(i + 1) * self.batch_size]
             x_adv = projected_gradient_descent(self.forward_with_preprocessing, x_batch, eps, eps_iter, nb_iter, norm=norm)
-            y_hat_adv = self.model(x_adv)
+            y_hat_adv = self.forward_with_preprocessing(x_adv)
             accs.append(
                 (y_hat_adv.argmax(dim=1) == y_batch).float().mean()
             )
@@ -164,7 +169,7 @@ class Benchmarker():
             x_batch = x[i * self.batch_size:(i + 1) * self.batch_size]
             y_batch = y[i * self.batch_size:(i + 1) * self.batch_size]
             x_adv = projected_gradient_descent(self.forward_with_preprocessing, x_batch, eps, eps_iter, nb_iter, norm, targeted=True)
-            y_hat_adv = self.model(x_adv)
+            y_hat_adv = self.forward_with_preprocessing(x_adv)
             accs.append(
                 (y_hat_adv.argmax(dim=1) == y_batch).float().mean()
             )
@@ -179,8 +184,8 @@ class Benchmarker():
         for i in tqdm.tqdm(range(self.n_batches), desc=f"Carlini Wagner L2, targeted={targeted}"):
             x_batch = x[i * self.batch_size:(i + 1) * self.batch_size]
             y_batch = y[i * self.batch_size:(i + 1) * self.batch_size]
-            x_adv = carlini_wagner_l2(self.model, x_batch, n_classes, targeted=targeted)
-            y_hat_adv = self.model(x_adv)
+            x_adv = carlini_wagner_l2(self.forward_with_preprocessing, x_batch, n_classes, targeted=targeted)
+            y_hat_adv = self.forward_with_preprocessing(x_adv)
             accs.append(
                 (y_hat_adv.argmax(dim=1) == y_batch).float().mean()
             )

@@ -46,7 +46,7 @@ class ReplacableVGG16BN(BasicLightningModel):
         log_sparsity = not no_log_sparsity
         self.using_robustbench = False
         
-        # configure custom layer
+        # configure custom layers
         if custom_layer_name is None:
             self.custom_layer = None
         elif custom_layer_name == "TopK":
@@ -86,7 +86,14 @@ class ReplacableVGG16BN(BasicLightningModel):
         x = torch.flatten(x, 1)
         x = self.classifier(x)
         return x
-
+    
+    def forward_with_preprocessing(self, x):
+        x = transforms.Normalize(self.preprocess_means, self.preprocess_stds)(x)
+        x = self.features(x)
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
+        return x
 
 if __name__ == "__main__":
     # parse arguments

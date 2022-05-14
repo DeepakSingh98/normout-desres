@@ -75,11 +75,6 @@ class Attacks(ABC):
             self.use_robustbench_l2 = False
             self.use_salt_and_pepper_attack = False
 
-    def forward_with_preprocessing(self, x):
-        if not self.using_robustbench:
-            x = transforms.Normalize(self.preprocess_means, self.preprocess_stds)(x)
-        return self(x)
-
     def on_validation_epoch_end(self):
         """
         `pytorch_lightning` hook override to insert attacks at end of val epoch.
@@ -157,7 +152,7 @@ class Attacks(ABC):
 
             if self.use_salt_and_pepper_attack:
                 self.salt_and_pepper_attack(x, y)
-            
+                        
     def test_corruption(self):
         x, y = load_cifar10c(n_examples=256, corruptions=self.corruption_types, severity=self.corruption_severity)
         acc = clean_accuracy(self.forward_with_preprocessing, x, y)
@@ -174,7 +169,7 @@ class Attacks(ABC):
         self.log(
             f"{attack_name} Accuracy", (y_hat_adv.argmax(dim=1) == y).float().mean()
         )
-        print(f"{attack_name} Accuracy", (y_hat_adv.argmax(dim=1) == y).float().mean())
+        print(f"{attack_name} Accuracy", (y_hat_adv.argmax(dim=1) == y).float().mean().item())
         if self.log_adversarial_examples:
             image_grid = torchvision.utils.make_grid(x_adv[:5, :, :, :], nrow=5, normalize=True)
             self.logger.log_image(
@@ -188,7 +183,7 @@ class Attacks(ABC):
         https://arxiv.org/abs/1412.6572
         """
         x_adv = fast_gradient_method(self.forward_with_preprocessing, x, self.adv_eps, norm=np.inf)
-        y_hat_adv = self(x_adv)
+        y_hat_adv = self.forward_with_preprocessing(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "FGSM")
         
     def untargeted_pgd_attack(self, x, y):
@@ -197,7 +192,7 @@ class Attacks(ABC):
         https://arxiv.org/abs/1706.06083
         """
         x_adv = projected_gradient_descent(self.forward_with_preprocessing, x, self.adv_eps, 0.007, self.pgd_steps, np.inf)
-        y_hat_adv = self(x_adv)
+        y_hat_adv = self.forward_with_preprocessing(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "Untargeted PGD")
     
     def targeted_pgd_attack(self, x, y, i):
@@ -208,7 +203,7 @@ class Attacks(ABC):
         y_target = torch.full((self.batch_size,), i) # (y + 1) % self.num_classes
         y_target = y_target.to(self.device)
         x_adv = projected_gradient_descent(self.forward_with_preprocessing, x, self.adv_eps, 0.007, self.pgd_steps, np.inf, y=y_target, targeted=True)
-        y_hat_adv = self(x_adv)
+        y_hat_adv = self.forward_with_preprocessing(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, f"Targeted PGD i={i}")
         return (y_hat_adv.argmax(dim=1) == y).float().mean()
     
@@ -218,7 +213,7 @@ class Attacks(ABC):
         https://arxiv.org/pdf/1608.04644.pdf
         """
         x_adv = carlini_wagner_l2(self.forward_with_preprocessing, x, self.num_classes)
-        y_hat_adv = self(x_adv)
+        y_hat_adv = self.forward_with_preprocessing(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "Untargeted CW L2")
     
     def targeted_cw_l2_attack(self, x, y):
@@ -230,7 +225,7 @@ class Attacks(ABC):
         y_target = (y + 1) % self.num_classes
         y_target = y_target.to(self.device)
         x_adv = carlini_wagner_l2(self.forward_with_preprocessing, x, self.num_classes, y=y_target, targeted=True)
-        y_hat_adv = self(x_adv)
+        y_hat_adv = self.forward_with_preprocessing(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "Targeted CW L2")
 
     def square_attack(self, x, y):
@@ -240,7 +235,7 @@ class Attacks(ABC):
         adversary = AutoAttack(self.forward_with_preprocessing, norm='Linf', eps=.3, version='rand')
         adversary.attacks_to_run = ['square']
         x_adv = adversary.run_standard_evaluation(x, y)
-        y_hat_adv = self(x_adv)
+        y_hat_adv = self.forward_with_preprocessing(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "Square")
     
     def random_apgd_ce_attack(self, x, y):
@@ -250,7 +245,7 @@ class Attacks(ABC):
         adversary = AutoAttack(self.forward_with_preprocessing, norm='Linf', eps=.3, version='rand')
         adversary.attacks_to_run = ['apgd-ce']
         x_adv = adversary.run_standard_evaluation(x, y)
-        y_hat_adv = self(x_adv)
+        y_hat_adv = self.forward_with_preprocessing(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "EOI APGD-CE")
     
     def random_apgd_dlr_attack(self, x, y):
@@ -260,21 +255,21 @@ class Attacks(ABC):
         adversary = AutoAttack(self.forward_with_preprocessing, norm='Linf', eps=.3, version='rand')
         adversary.attacks_to_run = ['apgd-dlr']
         x_adv = adversary.run_standard_evaluation(x, y)
-        y_hat_adv = self(x_adv)
+        y_hat_adv = self.forward_with_preprocessing(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "EOI APGD-DLR")
     
     def untargeted_fab_attack(self, x, y):
         adversary = AutoAttack(self.forward_with_preprocessing, norm='Linf', eps=self.adv_eps, version='standard')
         adversary.attacks_to_run = ['fab']
         x_adv = adversary.run_standard_evaluation(x, y, self.batch_size)
-        y_hat_adv = self(x_adv)
+        y_hat_adv = self.forward_with_preprocessing(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "Untargeted FAB")
         
     def targeted_fab_attack(self, x, y):
         adversary = AutoAttack(self.forward_with_preprocessing, norm='Linf', eps=self.adv_eps, version='standard')
         adversary.attacks_to_run = ['fab-t']
         x_adv = adversary.run_standard_evaluation(x, y, self.batch_size)
-        y_hat_adv = self(x_adv)
+        y_hat_adv = self.forward_with_preprocessing(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "Targeted FAB")
 
     def salt_and_pepper_attack(self, x, y):
