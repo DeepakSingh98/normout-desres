@@ -42,9 +42,9 @@ class ReplacableVGG16BN(BasicLightningModel):
     ):
         super().__init__(**kwargs)
         self.custom_layer_name = custom_layer_name
-        self.preprocess_during_forward = False
         use_abs = not no_abs
         log_sparsity = not no_log_sparsity
+        self.using_robustbench = False
         
         # configure custom layer
         if custom_layer_name is None:
@@ -80,12 +80,7 @@ class ReplacableVGG16BN(BasicLightningModel):
         layers[i] = layer
         return layers
 
-    def set_preprocess_during_forward(self, state: bool):
-        self.preprocess_during_forward = state
-
     def forward(self, x):
-        if self.preprocess_during_forward:
-            x = transforms.Normalize(self.pretrained_means, self.pretrained_stds)(x)
         x = self.features(x)
         x = self.avgpool(x)
         x = torch.flatten(x, 1)

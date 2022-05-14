@@ -8,6 +8,7 @@ from cleverhans.torch.attacks.projected_gradient_descent import projected_gradie
 from cw_attacks import carlini_wagner_l2
 from robustbench.data import load_cifar10c, load_cifar10
 from robustbench.utils import clean_accuracy
+import torchvision.transforms as transforms
 
 import torch
 import torch.nn.functional as F
@@ -74,20 +75,24 @@ class Attacks(ABC):
             self.use_robustbench_l2 = False
             self.use_salt_and_pepper_attack = False
 
+    def forward_with_preprocessing(self, x):
+        if not self.using_robustbench:
+            x = transforms.Normalize(self.preprocess_means, self.preprocess_stds)(x)
+        return self(x)
+
     def on_validation_epoch_end(self):
         """
         `pytorch_lightning` hook override to insert attacks at end of val epoch.
         """
         if self.current_epoch % 10 == 0:
 
-            self.set_preprocess_during_forward(True)
-
             if self.dset_name != 'CIFAR10':
                 raise NotImplementedError('Only CIFAR-10 is supported for now.')
 
             x, y = load_cifar10(n_examples=256)
             x = x.to(self.device); y = y.to(self.device)
-            acc = clean_accuracy(self, x, y)
+            acc = clean_accuracy(self.forward_with_preprocessing, x, y)
+            print("Clean Accuracy", acc)
             self.log(f"Clean Accuracy", acc)
 
             # do ablation to make sure this needs to be here
@@ -153,11 +158,9 @@ class Attacks(ABC):
             if self.use_salt_and_pepper_attack:
                 self.salt_and_pepper_attack(x, y)
             
-            self.set_preprocess_during_forward(False)
-
     def test_corruption(self):
         x, y = load_cifar10c(n_examples=256, corruptions=self.corruption_types, severity=self.corruption_severity)
-        acc = clean_accuracy(self, x, y)
+        acc = clean_accuracy(self.forward_with_preprocessing, x, y)
         print(f'Model: {self.model_name}, CIFAR-10-C accuracy: {acc:.1%}')
         self.log(
                     f"Corruption Accuracy (corruption types={self.corruption_types}, severity={self.corruption_severity})", acc
@@ -184,7 +187,7 @@ class Attacks(ABC):
         Performs a fast gradient method attack on the model as described in
         https://arxiv.org/abs/1412.6572
         """
-        x_adv = fast_gradient_method(self, x, self.adv_eps, norm=np.inf)
+        x_adv = fast_gradient_method(self.forward_with_preprocessing, x, self.adv_eps, norm=np.inf)
         y_hat_adv = self(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "FGSM")
         
@@ -193,7 +196,7 @@ class Attacks(ABC):
         Performs an untargeted projected gradient descent attack on the model as described in
         https://arxiv.org/abs/1706.06083
         """
-        x_adv = projected_gradient_descent(self, x, self.adv_eps, 0.007, self.pgd_steps, np.inf)
+        x_adv = projected_gradient_descent(self.forward_with_preprocessing, x, self.adv_eps, 0.007, self.pgd_steps, np.inf)
         y_hat_adv = self(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "Untargeted PGD")
     
@@ -204,7 +207,7 @@ class Attacks(ABC):
         """
         y_target = torch.full((self.batch_size,), i) # (y + 1) % self.num_classes
         y_target = y_target.to(self.device)
-        x_adv = projected_gradient_descent(self, x, self.adv_eps, 0.007, self.pgd_steps, np.inf, y=y_target, targeted=True)
+        x_adv = projected_gradient_descent(self.forward_with_preprocessing, x, self.adv_eps, 0.007, self.pgd_steps, np.inf, y=y_target, targeted=True)
         y_hat_adv = self(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, f"Targeted PGD i={i}")
         return (y_hat_adv.argmax(dim=1) == y).float().mean()
@@ -214,7 +217,7 @@ class Attacks(ABC):
         Performs an untargeted Carlini-Wagner L2 attack on the model as described in
         https://arxiv.org/pdf/1608.04644.pdf
         """
-        x_adv = carlini_wagner_l2(self.forward, x, self.num_classes)
+        x_adv = carlini_wagner_l2(self.forward_with_preprocessing, x, self.num_classes)
         y_hat_adv = self(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "Untargeted CW L2")
     
@@ -226,7 +229,7 @@ class Attacks(ABC):
         #y_target = torch.full((self.batch_size,), i) # 
         y_target = (y + 1) % self.num_classes
         y_target = y_target.to(self.device)
-        x_adv = carlini_wagner_l2(self, x, self.num_classes, y=y_target, targeted=True)
+        x_adv = carlini_wagner_l2(self.forward_with_preprocessing, x, self.num_classes, y=y_target, targeted=True)
         y_hat_adv = self(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "Targeted CW L2")
 
@@ -234,7 +237,7 @@ class Attacks(ABC):
         """
         Runs a black box square attack with AutoAttack.
         """
-        adversary = AutoAttack(self, norm='Linf', eps=.3, version='rand')
+        adversary = AutoAttack(self.forward_with_preprocessing, norm='Linf', eps=.3, version='rand')
         adversary.attacks_to_run = ['square']
         x_adv = adversary.run_standard_evaluation(x, y)
         y_hat_adv = self(x_adv)
@@ -244,7 +247,7 @@ class Attacks(ABC):
         """
         Runs an EOI APGD-CE attack with AutoAttack (no restarts, 20 iterations for EoT).
         """
-        adversary = AutoAttack(self, norm='Linf', eps=.3, version='rand')
+        adversary = AutoAttack(self.forward_with_preprocessing, norm='Linf', eps=.3, version='rand')
         adversary.attacks_to_run = ['apgd-ce']
         x_adv = adversary.run_standard_evaluation(x, y)
         y_hat_adv = self(x_adv)
@@ -254,21 +257,21 @@ class Attacks(ABC):
         """
         Runs an EOI APGD-DLR attack with AutoAttack (no restarts, 20 iterations for EoT).
         """
-        adversary = AutoAttack(self, norm='Linf', eps=.3, version='rand')
+        adversary = AutoAttack(self.forward_with_preprocessing, norm='Linf', eps=.3, version='rand')
         adversary.attacks_to_run = ['apgd-dlr']
         x_adv = adversary.run_standard_evaluation(x, y)
         y_hat_adv = self(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "EOI APGD-DLR")
     
     def untargeted_fab_attack(self, x, y):
-        adversary = AutoAttack(self, norm='Linf', eps=self.adv_eps, version='standard')
+        adversary = AutoAttack(self.forward_with_preprocessing, norm='Linf', eps=self.adv_eps, version='standard')
         adversary.attacks_to_run = ['fab']
         x_adv = adversary.run_standard_evaluation(x, y, self.batch_size)
         y_hat_adv = self(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, "Untargeted FAB")
         
     def targeted_fab_attack(self, x, y):
-        adversary = AutoAttack(self, norm='Linf', eps=self.adv_eps, version='standard')
+        adversary = AutoAttack(self.forward_with_preprocessing, norm='Linf', eps=self.adv_eps, version='standard')
         adversary.attacks_to_run = ['fab-t']
         x_adv = adversary.run_standard_evaluation(x, y, self.batch_size)
         y_hat_adv = self(x_adv)
@@ -278,7 +281,7 @@ class Attacks(ABC):
         """
         Uses Foolbox to perform a salt and pepper attack.
         """
-        fmodel = fb.PyTorchModel(self, bounds=(0, 1))
+        fmodel = fb.PyTorchModel(self.forward_with_preprocessing, bounds=(0, 1))
         images, labels = fb.utils.samples(fmodel, dataset='cifar10', batchsize=16, data_format='channels_first', bounds=(0, 1))
         clean_acc = fb.accuracy(fmodel, images, labels)
         attack = fb.attacks.saltandpepper.SalßtAndPepperNoiseAttack()

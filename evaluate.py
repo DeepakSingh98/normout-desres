@@ -78,7 +78,7 @@ class Benchmarker():
             entity="normout",
             tags=["benchmark_run"],
             config=args
-            )
+            )       
 
     def forward_with_preprocessing(self, x):
         if self.preprocess_means is not None and self.preprocess_stds is not None:
