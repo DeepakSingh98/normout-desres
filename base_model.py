@@ -89,13 +89,13 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
             
             assert not self.use_data_augmentation # no data aug supported for MNIST-Fashion
 
-            self.pretrained_means = (0.5,)
-            self.pretrained_stds = (0.5,)
+            self.preprocess_means = (0.5,)
+            self.preprocess_stds = (0.5,)
 
             self.plain_transforms = transforms.Compose([
                             transforms.Resize(32), # TODO: why doesn't this work for 28x28?
-                            transforms.ToTensor(), 
-                            transforms.Normalize(self.pretrained_means, self.pretrained_stds)
+                            transforms.ToTensor(),
+                            transforms.Normalize(self.preprocess_means, self.preprocess_stds)
                         ])
             
             self.training_set = torchvision.datasets.FashionMNIST(
@@ -110,8 +110,8 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
 
         elif dset_name == "CIFAR10":
 
-            self.pretrained_means = [0.4914, 0.4822, 0.4465]
-            self.pretrained_stds = [0.2023, 0.1994, 0.2010]
+            self.preprocess_means = [0.4914, 0.4822, 0.4465]
+            self.preprocess_stds = [0.2023, 0.1994, 0.2010]
 
             # per https://github.com/moritzhambach/Image-Augmentation-in-Keras-CIFAR-10-
             augment_transforms = transforms.Compose([
@@ -137,13 +137,13 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
                     )
                 ], p=0.5),
                 transforms.ToTensor(),
-                transforms.Normalize(self.pretrained_means, self.pretrained_stds)
+                transforms.Normalize(self.preprocess_means, self.preprocess_stds)
             ])
 
             self.plain_transforms = transforms.Compose([
                                     transforms.ToTensor(),
-                                    transforms.Normalize(mean=self.pretrained_means,
-                                                         std=self.pretrained_stds)
+                                    transforms.Normalize(mean=self.preprocess_means,
+                                                         std=self.preprocess_stds)
                                 ])
             
             self.robustbench_transforms = transforms.Compose([transforms.ToTensor()])

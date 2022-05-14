@@ -39,10 +39,9 @@ class CustomModel(BasicLightningModel):
         normalization_type,
         **kwargs
     ):
-        super().__init__(**kwargs, use_ecoc=self.use_ecoc)
+        super().__init__(**kwargs)
         self.custom_layer_name = custom_layer_name
         self.pretrained = pretrained
-        self.preprocess_during_forward = False
         self.model_name = model_name
         use_batch_norm = not no_batch_norm
         use_abs = not no_abs
@@ -107,10 +106,6 @@ class CustomModel(BasicLightningModel):
         if self.custom_layer is not None and replace_layers is not None:
             for i in replace_layers:
                 self.replace_custom_layer(layers, i)
-        
-        if self.use_ecoc:
-            # replace final linear layer with 16 output_dim
-            layers[-1] = nn.Linear(layers[-1].in_features, 16)
 
         if not already_sequential:        
             self.model = nn.Sequential(*layers)
@@ -132,12 +127,7 @@ class CustomModel(BasicLightningModel):
         layer.set_index(i)
         layers.insert(i, layer)
 
-    def set_preprocess_during_forward(self, state: bool):
-        self.preprocess_during_forward = state
-
     def forward(self, x):
-        if self.preprocess_during_forward and not self.using_robustbench:
-            x = transforms.Normalize(self.pretrained_means, self.pretrained_stds)(x)
         x = self.model(x)
         return x
 
