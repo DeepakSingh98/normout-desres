@@ -1,10 +1,8 @@
 from typing import List
 from base_model import BasicLightningModel
 from custom_layers.custom_dropout import CustomDropout
-from custom_layers.custom_layer import CustomLayer
-from custom_layers.expout import ExpOut
 from custom_layers.normout import NormOut
-from custom_layers.sigmoid_out import SigmoidOut
+from custom_layers.normout import NormOut
 from custom_layers.topk import TopK
 from models.resnet_layers import resnet_layers
 from models.robustbench_model import robustbench_model
@@ -12,7 +10,6 @@ from models.vgg16_layers import vgg16_layers
 import torchvision.transforms as transforms
 import torch.nn as nn
 import copy
-import torch
 
 class CustomModel(BasicLightningModel):
     """
@@ -31,7 +28,6 @@ class CustomModel(BasicLightningModel):
         no_batch_norm, 
         custom_layer_name, 
         no_abs,
-        max_type,
         on_at_inference, 
         dropout_p,
         topk_k,
@@ -40,11 +36,9 @@ class CustomModel(BasicLightningModel):
         replace_layers,
         no_log_sparsity,
         log_input_stats,
-        no_ecoc,
         normalization_type,
         **kwargs
     ):
-        self.use_ecoc = not no_ecoc
         super().__init__(**kwargs, use_ecoc=self.use_ecoc)
         self.custom_layer_name = custom_layer_name
         self.pretrained = pretrained
@@ -57,20 +51,14 @@ class CustomModel(BasicLightningModel):
         # configure custom layer
         if custom_layer_name is None:
             self.custom_layer = None
-        elif custom_layer_name == "ReLU":
-            self.custom_layer = nn.ReLU(True)
-        elif custom_layer_name == "NormOut":
-            self.custom_layer = NormOut(use_abs, max_type, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         elif custom_layer_name == "TopK":
             self.custom_layer = TopK(topk_k, on_at_inference, log_input_stats, log_sparsity)
         elif custom_layer_name == "Dropout":
             self.custom_layer = CustomDropout(dropout_p, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
-        elif custom_layer_name == "ExpOut":
-            self.custom_layer = ExpOut()
-        elif custom_layer_name == "SigmoidOut":
-            self.custom_layer = SigmoidOut(use_abs, normalization_type, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
+        elif custom_layer_name == "NormOut":
+            self.custom_layer = NormOut(normalization_type, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats, use_abs=use_abs)
         else:
-            raise ValueError("custom_layer_name must be 'ReLU', 'NormOut', or 'TopK'")
+            raise ValueError("custom_layer_name must be 'Dropout', 'NormOut', or 'TopK'")
         
         already_sequential = False
         self.using_robustbench = False
