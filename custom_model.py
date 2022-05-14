@@ -34,7 +34,6 @@ class CustomModel(BasicLightningModel):
         max_type,
         on_at_inference, 
         dropout_p,
-        dropout_replacement_2_p,
         topk_k,
         remove_layers,
         insert_layers,
@@ -51,7 +50,6 @@ class CustomModel(BasicLightningModel):
         self.pretrained = pretrained
         self.preprocess_during_forward = False
         self.model_name = model_name
-        self.dropout_replacement_2_p = None
         use_batch_norm = not no_batch_norm
         use_abs = not no_abs
         log_sparsity = not no_log_sparsity
@@ -67,8 +65,6 @@ class CustomModel(BasicLightningModel):
             self.custom_layer = TopK(topk_k, on_at_inference, log_input_stats, log_sparsity)
         elif custom_layer_name == "Dropout":
             self.custom_layer = CustomDropout(dropout_p, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
-            if dropout_replacement_2_p != -1:
-                self.dropout_replacement_2_p = CustomDropout(dropout_replacement_2_p, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
         elif custom_layer_name == "ExpOut":
             self.custom_layer = ExpOut()
         elif custom_layer_name == "SigmoidOut":
@@ -121,16 +117,8 @@ class CustomModel(BasicLightningModel):
                 self.insert_custom_layer(layers, i)
         
         if self.custom_layer is not None and replace_layers is not None:
-            print("Layer replacements:")
-            if self.custom_layer_name == "Dropout":
-                for i in replace_layers:
-                    if i == 1 and self.dropout_replacement_2_p != -1:
-                        self.replace_custom_layer(layers, i, self.dropout_replacement_2_p)
-                    else:
-                        self.replace_custom_layer(layers, i)
-            else:
-                for i in replace_layers:
-                    self.replace_custom_layer(layers, i)
+            for i in replace_layers:
+                self.replace_custom_layer(layers, i)
         
         if self.use_ecoc:
             # replace final linear layer with 16 output_dim
