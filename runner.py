@@ -62,7 +62,7 @@ parser.add_argument("--log-adversarial-examples", default=False, action="store_t
 
 # logging
 parser.add_argument("--no-log-sparsity", default=False, action="store_true", help="Don't log sparsity (default False")
-parser.add_argument("--log-input-stats", default=False, action="store_true", help="Log input stats (default False)")
+parser.add_argument("--log-input-stats", default=True, action="store_true", help="Log input stats (default False)")
 # use ecoc
 parser.add_argument("--no-ecoc", default=True, action="store_true", help="Don't use error correcting output codes (default False)")
 args = parser.parse_args()
