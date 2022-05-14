@@ -206,6 +206,7 @@ class Attacks(ABC):
         x_adv = projected_gradient_descent(self, x, self.adv_eps, 0.007, self.pgd_steps, np.inf, y=y_target, targeted=True)
         y_hat_adv = self(x_adv)
         self.log_attack_stats(x_adv, y_hat_adv, y, f"Targeted PGD i={i}")
+        return (y_hat_adv.argmax(dim=1) == y).float().mean()
     
     def untargeted_cw_l2_attack(self, x, y):
         """ 

@@ -32,7 +32,6 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         weight_decay,
         momentum,
         # catch other kwargs
-        use_ecoc,
         **kwargs
         ):
 
@@ -49,7 +48,6 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         self.weight_decay = weight_decay
         self.momentum = momentum
         self.use_robustbench_data = use_robustbench_data
-        self.use_ecoc = use_ecoc
 
         if use_robustbench_data:
             self.use_data_augmentation = False
