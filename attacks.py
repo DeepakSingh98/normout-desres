@@ -171,6 +171,7 @@ class Attacks(ABC):
         self.log(
             f"{attack_name} Accuracy", (y_hat_adv.argmax(dim=1) == y).float().mean()
         )
+        print(f"{attack_name} Accuracy", (y_hat_adv.argmax(dim=1) == y).float().mean())
         if self.log_adversarial_examples:
             image_grid = torchvision.utils.make_grid(x_adv[:5, :, :, :], nrow=5, normalize=True)
             self.logger.log_image(

@@ -82,7 +82,7 @@ class Benchmarker():
 
     def forward_with_preprocessing(self, x):
         if self.preprocess_means is not None and self.preprocess_stds is not None:
-            x = transforms.Normalize(self.pretrained_means, self.pretrained_stds)(x)
+            x = transforms.Normalize(self.preprocess_means, self.preprocess_stds)(x)
         return self.model(x)
     
     def benchmark(self):
@@ -100,20 +100,20 @@ class Benchmarker():
         wandb.log({"Clean Accuracy": clean_acc})
 
         # fgm
-        self.fgsm_attack(self.test_x, self.test_y, eps=0.3, norm=np.inf)
-        self.fgsm_attack(self.test_x, self.test_y, eps=0.3, norm=2)
+        self.fgsm_attack(self.test_x, self.test_y, eps=0.03, norm=np.inf)
+        self.fgsm_attack(self.test_x, self.test_y, eps=0.03, norm=2)
 
         # untargeted pgd
-        self.untargeted_pgd_attack(self.test_x, self.test_y, eps=0.3, eps_iter=0.01, nb_iter=40, norm=np.inf)
-        self.untargeted_pgd_attack(self.test_x, self.test_y, eps=0.3, eps_iter=0.01, nb_iter=40, norm=2)
+        self.untargeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=np.inf)
+        self.untargeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=2)
 
         # carlini wagner
         self.carlini_wagner_l2_attack(self.test_x, self.test_y, self.n_classes, targeted=True)
         self.carlini_wagner_l2_attack(self.test_x, self.test_y, self.n_classes, targeted=False)
 
         # targeted pgd
-        self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.3, eps_iter=0.01, nb_iter=40, norm=np.inf)
-        self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.3, eps_iter=0.01, nb_iter=40, norm=2)
+        self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=np.inf)
+        self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=2)
 
     def log_attack_results(self, acc, attack_name):
         wandb.log(
@@ -135,6 +135,7 @@ class Benchmarker():
             accs.append(
                 (y_hat_adv.argmax(dim=1) == y_batch).float().mean()
             )
+        print("FGSM accs per batch", [acc.item() for acc in accs])
         self.log_attack_results(sum(accs)/len(accs), f"FGSM, norm={norm}")
         
     def untargeted_pgd_attack(self, x, y, eps, eps_iter, nb_iter, norm=np.inf):

@@ -128,8 +128,8 @@ if __name__ == "__main__":
     # SigmoidOut settings
     parser.add_argument("--normalization-type", type=str, default="SpatialMax", help="type of normalization to use (defautl SpatialMax), supports SpatialMax, SpatialSigmoid, TemporalMax, TemporalSigmoid, SpatiotemporalSigmoid, SpatiotemporalMax")
     # attacks
-    parser.add_argument("--all-attacks-off", default=True, action="store_true", help="Turn all attacks off (default False)")
-    parser.add_argument("--no-fgm", default=True, action="store_true", help="Don't use adversarial fgm (default False)")
+    parser.add_argument("--all-attacks-off", default=False, action="store_true", help="Turn all attacks off (default False)")
+    parser.add_argument("--no-fgm", default=False, action="store_true", help="Don't use adversarial fgm (default False)")
     parser.add_argument("--no-pgd-ce", default=True, action="store_true", help="Don't use adversarial pgd-ce (default False)")
     parser.add_argument("--no-pgd-t", default=True, action="store_true", help="Don't use adversarial pgd-t (default False)")
     parser.add_argument("--no-cw-l2-ce", default=True, action="store_true", help="Don't use untargeted Carlini wagner L2 attacks (default False)")
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     parser.add_argument("--no-fab-t",  default=True, action="store_true", help="Don't use FAB-T attack (default False)")
     parser.add_argument("--no-square-attack", default=True, action="store_true", help="Don't use square attack (default False)")
     parser.add_argument("--no-randomized-attack", default=True, action="store_true", help="Don't use randomized attacks (default False)") #TODO make False default
-    parser.add_argument("--no-robustbench-linf", default=False, action="store_true", help="Don't use robustbench Linf autoattack (default False)")
+    parser.add_argument("--no-robustbench-linf", default=True, action="store_true", help="Don't use robustbench Linf autoattack (default False)")
     parser.add_argument("--no-robustbench-l2", default=True, action="store_true", help="Don't use robustbench L2 autoattack (default False)")
     parser.add_argument("--no-salt-and-pepper-attack", default=True, action="store_true", help="Don't use salt and pepper attack (default False)")
     parser.add_argument("--adv-eps", type=float, default=0.03, help="adversarial epsilon (default 0.03)")
