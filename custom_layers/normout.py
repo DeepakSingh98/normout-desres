@@ -14,7 +14,7 @@ class NormOut(nn.Module, CustomLayer):
     def __init__(self, normalization_type: str, log_sparsity_bool: bool, log_input_stats_bool: bool, use_abs: bool, **kwargs):
 
         nn.Module.__init__(self)
-        CustomLayer.__init__(self, custom_layer_name="SigmoidOut")
+        CustomLayer.__init__(self, custom_layer_name="NormOut")
 
         self.use_abs = use_abs
         self.normalization_type = normalization_type

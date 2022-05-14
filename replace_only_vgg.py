@@ -97,7 +97,7 @@ if __name__ == "__main__":
     # parse arguments
     # general settings
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", type=int, default=100, help="number of epochs (default 100)")
+    parser.add_argument("--epochs", type=int, default=200, help="number of epochs (default 100)")
     parser.add_argument("--batch-size", type=int, default=256, help="batch size (default 256)")
     parser.add_argument("--num-workers", type=int, default=4, help="number of workers used for data loading (default 4)")
     parser.add_argument("--num-gpus", type=int, default=1, help="number of gpus to use (default 1)")
