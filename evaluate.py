@@ -39,9 +39,20 @@ class Benchmarker():
         self.device = device
         self.batch_size = batch_size
     
+        # load data
+        if self.dataset == "CIFAR10":
+            self.test_x, self.test_y = load_cifar10()
+            self.n_classes = 10
+        elif self.dataset == "ImageNet":
+            self.test_x, self.test_y = load_imagenet()
+            self.n_classes = 1000
+        self.test_x = self.test_x.to(self.device)
+        self.test_y = self.test_y.to(self.device)
+        self.n_batches = int(np.ceil(self.test_x.shape[0] / self.batch_size))
+
         # get model
         if model_name == "VGG16" and dset_name == "CIFAR10":
-            self.model = vgg16_bn(False, num_classes=10)
+            self.model = vgg16_bn(False, num_classes=self.n_classes)
         elif model_name in [
             "Carmon2019Unlabeled",
             "Standard",
@@ -57,17 +68,6 @@ class Benchmarker():
         if weights_path is not None and weights_path != "":            
             loaded = torch.load(weights_path)
             self.model.load_state_dict(loaded['state_dict'])
-
-        # load data
-        if self.dataset == "CIFAR10":
-            self.test_x, self.test_y = load_cifar10()
-            self.n_classes = 10
-        elif self.dataset == "ImageNet":
-            self.test_x, self.test_y = load_imagenet()
-            self.n_classes = 1000
-        self.test_x = self.test_x.to(self.device)
-        self.test_y = self.test_y.to(self.device)
-        self.n_batches = int(np.ceil(self.test_x.shape[0] / self.batch_size))
 
         # initialize wandb
         name = special_name if (special_name is not None and special_name != "") else self.model_name
