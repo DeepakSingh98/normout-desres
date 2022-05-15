@@ -15,6 +15,7 @@ from cleverhans.torch.attacks.projected_gradient_descent import projected_gradie
 from cleverhans.torch.attacks.carlini_wagner_l2 import carlini_wagner_l2
 
 from models.robustbench_model import robustbench_model
+from autoattack import AutoAttack
 
 
 
@@ -104,20 +105,24 @@ class Benchmarker():
             wandb.log({"Clean Accuracy": clean_acc})
 
         # fgm
-        self.fgsm_attack(self.test_x, self.test_y, eps=0.03, norm=np.inf)
-        self.fgsm_attack(self.test_x, self.test_y, eps=0.03, norm=2)
+        self.fgsm_attack(self.test_x, self.test_y, eps=100, norm=np.inf)
+        self.fgsm_attack(self.test_x, self.test_y, eps=100, norm=2)
 
         # untargeted pgd
         self.untargeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=np.inf)
         self.untargeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=2)
 
-        # carlini wagner
-        self.carlini_wagner_l2_attack(self.test_x, self.test_y, self.n_classes, targeted=True)
-        self.carlini_wagner_l2_attack(self.test_x, self.test_y, self.n_classes, targeted=False)
+        # # carlini wagner
+        # self.carlini_wagner_l2_attack(self.test_x, self.test_y, self.n_classes, targeted=True)
+        # self.carlini_wagner_l2_attack(self.test_x, self.test_y, self.n_classes, targeted=False)
 
         # targeted pgd
-        self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=np.inf)
-        self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=2)
+        # self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=np.inf)
+        # self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=2)
+
+        # square 
+        self.square_attack(self.test_x, self.test_y)
+        self.square_attack(self.test_x, self.test_yy)
 
     def log_attack_results(self, acc, attack_name):
         if self.log_to_wandb:
@@ -132,13 +137,13 @@ class Benchmarker():
         https://arxiv.org/abs/1412.6572
         """
         accs = []
-        for i in tqdm.tqdm(range(self.n_batches), desc=f"FGSM, norm={norm}"):
+        for i in [0]: # tqdm.tqdm(range(self.n_batches), desc=f"FGSM, norm={norm}"):
             x_batch = x[i * self.batch_size:(i + 1) * self.batch_size]
             y_batch = y[i * self.batch_size:(i + 1) * self.batch_size]
             x_adv = fast_gradient_method(self.forward_with_preprocessing, x_batch, eps, norm=norm)
             y_hat_adv = self.forward_with_preprocessing(x_adv)
             accs.append(
-                (y_hat_adv.argmax(dim=1) == y_batch).float().mean()
+                (y_hat_adv.argmax(dim=1) == y_batch).float().mean().item()
             )
         # print("FGSM accs per batch", [acc.item() for acc in accs])
         self.log_attack_results(sum(accs)/len(accs), f"FGSM, norm={norm}")
@@ -149,13 +154,14 @@ class Benchmarker():
         https://arxiv.org/abs/1706.06083
         """
         accs = []
-        for i in tqdm.tqdm(range(self.n_batches), desc=f"Untargeted PGD, norm={norm}"):
+        # first half is  0.888888909961238, second half is
+        for i in [0]: # tqdm.tqdm(range(self.n_batches//2, self.n_batches), desc=f"Untargeted PGD, norm={norm}"):
             x_batch = x[i * self.batch_size:(i + 1) * self.batch_size]
             y_batch = y[i * self.batch_size:(i + 1) * self.batch_size]
             x_adv = projected_gradient_descent(self.forward_with_preprocessing, x_batch, eps, eps_iter, nb_iter, norm=norm)
             y_hat_adv = self.forward_with_preprocessing(x_adv)
             accs.append(
-                (y_hat_adv.argmax(dim=1) == y_batch).float().mean()
+                (y_hat_adv.argmax(dim=1) == y_batch).float().mean().item()
             )
         self.log_attack_results(sum(accs)/len(accs), f"Untargeted PGD, norm={norm}")
     
@@ -165,13 +171,13 @@ class Benchmarker():
         https://arxiv.org/abs/1706.06083
         """
         accs = []
-        for i in tqdm.tqdm(range(self.n_batches), desc=f"Targeted PGD, norm={norm}"):
+        for i in [0]: # tqdm.tqdm(range(self.n_batches), desc=f"Targeted PGD, norm={norm}"):
             x_batch = x[i * self.batch_size:(i + 1) * self.batch_size]
             y_batch = y[i * self.batch_size:(i + 1) * self.batch_size]
-            x_adv = projected_gradient_descent(self.forward_with_preprocessing, x_batch, eps, eps_iter, nb_iter, norm, targeted=True)
+            x_adv = projected_gradient_descent(self.forward_with_preprocessing, x_batch, eps, eps_iter, nb_iter, norm, targeted=True, y=y_batch+1)
             y_hat_adv = self.forward_with_preprocessing(x_adv)
             accs.append(
-                (y_hat_adv.argmax(dim=1) == y_batch).float().mean()
+                (y_hat_adv.argmax(dim=1) == y_batch).float().mean().item()
             )
         self.log_attack_results(sum(accs)/len(accs), f"Targeted PGD, norm={norm}")
     
@@ -181,15 +187,32 @@ class Benchmarker():
         https://arxiv.org/abs/1608.04644
         """
         accs = []
-        for i in tqdm.tqdm(range(self.n_batches), desc=f"Carlini Wagner L2, targeted={targeted}"):
+        for i in [0]: # tqdm.tqdm(range(self.n_batches), desc=f"Carlini Wagner L2, targeted={targeted}"):
             x_batch = x[i * self.batch_size:(i + 1) * self.batch_size]
             y_batch = y[i * self.batch_size:(i + 1) * self.batch_size]
             x_adv = carlini_wagner_l2(self.forward_with_preprocessing, x_batch, n_classes, targeted=targeted)
             y_hat_adv = self.forward_with_preprocessing(x_adv)
             accs.append(
-                (y_hat_adv.argmax(dim=1) == y_batch).float().mean()
+                (y_hat_adv.argmax(dim=1) == y_batch).float().mean().item()
             )
         self.log_attack_results(sum(accs)/len(accs), f"Carlini Wagner L2, targeted={targeted}")
+    
+    def square_attack(self, x, y):
+        """
+        Runs a black box square attack with AutoAttack.
+        """
+        accs = []
+        for i in [0]: # tqdm.tqdm(range(self.n_batches), desc=f"Carlini Wagner L2, targeted={targeted}"):
+            x_batch = x[i * self.batch_size:(i + 1) * self.batch_size]
+            y_batch = y[i * self.batch_size:(i + 1) * self.batch_size]
+            adversary = AutoAttack(self.forward_with_preprocessing, norm='Linf', eps=.3, version='rand')
+            adversary.attacks_to_run = ['square']
+            x_adv = adversary.run_standard_evaluation(x, y)
+            y_hat_adv = self.forward_with_preprocessing(x_adv)
+            accs.append(
+                (y_hat_adv.argmax(dim=1) == y_batch).float().mean().item()
+            )
+        self.log_attack_results(sum(accs)/len(accs), f"Square")
 
 
 if __name__ == "__main__":
@@ -198,7 +221,7 @@ if __name__ == "__main__":
     parser.add_argument("--dset-name", type=str, default="CIFAR10", help="dataset name (default CIFAR10, also supports MNIST-Fashion)")
     parser.add_argument("--weights-path", type=str, default="", help="path to model weights")
     parser.add_argument("--device", type=str, default="cuda", help="device (default cuda)")
-    parser.add_argument("--batch-size", type=int, default=150, help="batch size (default 128)") # change this if get out of memory error!
+    parser.add_argument("--batch-size", type=int, default=100, help="batch size (default 128)") # change this if get out of memory error!
     parser.add_argument("--preprocess-means", type=float, nargs="+", default=[0.4914, 0.4822, 0.4465], help="preprocess means (default [0.4914, 0.4822, 0.4465])")
     parser.add_argument("--preprocess-stds", type=float, nargs="+", default=[0.2023, 0.1994, 0.2010], help="preprocess stds (default [0.2023, 0.1994, 0.2010])")
     parser.add_argument("--special-name", type=str, default="", help="special name (default '')")
