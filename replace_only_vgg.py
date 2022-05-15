@@ -14,7 +14,6 @@ from datetime import datetime
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning import Trainer
 
-from custom_model import CustomModel
 from utils import set_tags
 import wandb
 
@@ -38,6 +37,7 @@ class ReplacableVGG16BN(BasicLightningModel):
         no_abs=False,
         no_log_sparsity=False,
         log_input_stats=True,
+        weights_path=None,
         **kwargs
     ):
         super().__init__(**kwargs)
@@ -70,6 +70,10 @@ class ReplacableVGG16BN(BasicLightningModel):
 
         print(self.classifier)
 
+        if weights_path is not None:
+            print("loading weights...")
+            self.load_state_dict(torch.load(weights_path))
+
     def replace_custom_layer(self, layers, i, replace_with=None):
         if replace_with is not None:
             layer = copy.copy(replace_with)
@@ -99,7 +103,7 @@ if __name__ == "__main__":
     # parse arguments
     # general settings
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", type=int, default=200, help="number of epochs (default 100)")
+    parser.add_argument("--epochs", type=int, default=200, help="number of epochs (default 200)")
     parser.add_argument("--batch-size", type=int, default=256, help="batch size (default 256)")
     parser.add_argument("--num-workers", type=int, default=4, help="number of workers used for data loading (default 4)")
     parser.add_argument("--num-gpus", type=int, default=1, help="number of gpus to use (default 1)")
@@ -148,7 +152,8 @@ if __name__ == "__main__":
     parser.add_argument("--corruption-types", type=str, nargs="+", default=None, help="type of corruption to add (supports shot_noise, motion_blur, snow, pixelate, gaussian_noise, defocus_blur, brightness, fog, zoom_blur, frost, glass_blur, impulse_noise, contrast, jpeg_compression, elastic_transform")
     parser.add_argument("--corruption-severity", type=int, default=1, help="Severity of corruption, supports ints 1 through 5 (default 1)")
     parser.add_argument("--log-adversarial-examples", default=False, action="store_true", help="Log adversarial examples (default False)")
-    
+    parser.add_arguments("--weights-path", type=str, default=None, help="Path to weights file")
+
     parser.add_argument("--neg-replace-layers", type=int, nargs="+", default=None, help="layer indices at which the layer is placed with the custom layer (NOTE: happens after removal and insertion)")
     args = parser.parse_args()
 
