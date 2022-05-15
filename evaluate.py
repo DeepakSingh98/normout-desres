@@ -105,24 +105,24 @@ class Benchmarker():
             wandb.log({"Clean Accuracy": clean_acc})
 
         # fgm
-        self.fgsm_attack(self.test_x, self.test_y, eps=100, norm=np.inf)
-        self.fgsm_attack(self.test_x, self.test_y, eps=100, norm=2)
+        self.fgsm_attack(self.test_x, self.test_y, eps=(32/255), norm=np.inf)
+        self.fgsm_attack(self.test_x, self.test_y, eps=(32/255), norm=2)
 
         # untargeted pgd
-        self.untargeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=np.inf)
-        self.untargeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=2)
+        self.untargeted_pgd_attack(self.test_x, self.test_y, eps=(32/255), eps_iter=0.007, nb_iter=40, norm=np.inf)
+        self.untargeted_pgd_attack(self.test_x, self.test_y, eps=(32/255), eps_iter=0.007, nb_iter=40, norm=2)
 
         # # carlini wagner
         # self.carlini_wagner_l2_attack(self.test_x, self.test_y, self.n_classes, targeted=True)
         # self.carlini_wagner_l2_attack(self.test_x, self.test_y, self.n_classes, targeted=False)
 
         # targeted pgd
-        # self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=np.inf)
-        # self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=2)
+        self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.3, eps_iter=0.007, nb_iter=40, norm=np.inf)
+        self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.3, eps_iter=0.007, nb_iter=40, norm=2)
 
-        # square 
-        self.square_attack(self.test_x, self.test_y)
-        self.square_attack(self.test_x, self.test_yy)
+        # # square 
+        # self.square_attack(self.test_x, self.test_y)
+        # self.square_attack(self.test_x, self.test_yy)
 
     def log_attack_results(self, acc, attack_name):
         if self.log_to_wandb:
