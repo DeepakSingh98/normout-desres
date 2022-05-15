@@ -105,8 +105,8 @@ class Benchmarker():
             wandb.log({"Clean Accuracy": clean_acc})
 
         # fgm
-        self.fgsm_attack(self.test_x, self.test_y, eps=(32/255), norm=np.inf)
-        self.fgsm_attack(self.test_x, self.test_y, eps=(32/255), norm=2)
+        self.fgsm_attack(self.test_x, self.test_y, eps=0.03, norm=np.inf)
+        self.fgsm_attack(self.test_x, self.test_y, eps=0.03, norm=2)
 
         # untargeted pgd
         self.untargeted_pgd_attack(self.test_x, self.test_y, eps=(32/255), eps_iter=0.007, nb_iter=40, norm=np.inf)
@@ -117,12 +117,12 @@ class Benchmarker():
         # self.carlini_wagner_l2_attack(self.test_x, self.test_y, self.n_classes, targeted=False)
 
         # targeted pgd
-        self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.3, eps_iter=0.007, nb_iter=40, norm=np.inf)
-        self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.3, eps_iter=0.007, nb_iter=40, norm=2)
+        self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=np.inf)
+        self.targeted_pgd_attack(self.test_x, self.test_y, eps=0.03, eps_iter=0.007, nb_iter=40, norm=2)
 
-        # # square 
-        # self.square_attack(self.test_x, self.test_y)
-        # self.square_attack(self.test_x, self.test_yy)
+        # square 
+        self.square_attack(self.test_x, self.test_y, eps=0.03, norm='Linf')
+        self.square_attack(self.test_x, self.test_y, eps=0.03, norm='L2')
 
     def log_attack_results(self, acc, attack_name):
         if self.log_to_wandb:
@@ -174,7 +174,7 @@ class Benchmarker():
         for i in [0]: # tqdm.tqdm(range(self.n_batches), desc=f"Targeted PGD, norm={norm}"):
             x_batch = x[i * self.batch_size:(i + 1) * self.batch_size]
             y_batch = y[i * self.batch_size:(i + 1) * self.batch_size]
-            x_adv = projected_gradient_descent(self.forward_with_preprocessing, x_batch, eps, eps_iter, nb_iter, norm, targeted=True, y=y_batch+1)
+            x_adv = projected_gradient_descent(self.forward_with_preprocessing, x_batch, eps, eps_iter, nb_iter, norm, targeted=True, y=(y_batch+1)%self.n_classes)
             y_hat_adv = self.forward_with_preprocessing(x_adv)
             accs.append(
                 (y_hat_adv.argmax(dim=1) == y_batch).float().mean().item()
@@ -197,7 +197,7 @@ class Benchmarker():
             )
         self.log_attack_results(sum(accs)/len(accs), f"Carlini Wagner L2, targeted={targeted}")
     
-    def square_attack(self, x, y):
+    def square_attack(self, x, y, eps, norm='Linf'):
         """
         Runs a black box square attack with AutoAttack.
         """
@@ -205,7 +205,7 @@ class Benchmarker():
         for i in [0]: # tqdm.tqdm(range(self.n_batches), desc=f"Carlini Wagner L2, targeted={targeted}"):
             x_batch = x[i * self.batch_size:(i + 1) * self.batch_size]
             y_batch = y[i * self.batch_size:(i + 1) * self.batch_size]
-            adversary = AutoAttack(self.forward_with_preprocessing, norm='Linf', eps=.3, version='rand')
+            adversary = AutoAttack(self.forward_with_preprocessing, norm=norm, eps=eps)
             adversary.attacks_to_run = ['square']
             x_adv = adversary.run_standard_evaluation(x, y)
             y_hat_adv = self.forward_with_preprocessing(x_adv)
