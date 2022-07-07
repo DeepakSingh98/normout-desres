@@ -30,6 +30,7 @@ class ReplacableVGG16BN(BasicLightningModel):
         self, 
         custom_layer_name, 
         neg_replace_layers,
+        newtest,
         normalization_type,
         dropout_p=0.5,
         topk_k=40,
@@ -64,6 +65,14 @@ class ReplacableVGG16BN(BasicLightningModel):
         if self.custom_layer is not None and neg_replace_layers is not None:
             for i in neg_replace_layers:
                 classifier = self.replace_custom_layer(classifier, -i)
+        
+        if newtest:
+            layer1 = NormOut("TemporalMax", log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats, use_abs=use_abs)
+            layer2 = NormOut("TemporalMax", log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats, use_abs=use_abs)
+            layer1.set_index(3)
+            layer2.set_index(6)
+            features.insert(3, layer1)
+            features.insert(6, layer2)
         
         self.features = nn.Sequential(*features)
         self.classifier = nn.Sequential(*classifier)
@@ -147,7 +156,7 @@ if __name__ == "__main__":
     parser.add_argument("--no-robustbench-linf", default=True, action="store_true", help="Don't use robustbench Linf autoattack (default False)")
     parser.add_argument("--no-robustbench-l2", default=True, action="store_true", help="Don't use robustbench L2 autoattack (default False)")
     parser.add_argument("--no-salt-and-pepper-attack", default=True, action="store_true", help="Don't use salt and pepper attack (default False)")
-    parser.add_argument("--adv-eps", type=float, default=(32/255), help="adversarial epsilon (default 0.03)")
+    parser.add_argument("--adv-eps", type=float, default=(128/255), help="adversarial epsilon (default 0.03)")
     parser.add_argument("--pgd-steps", type=int, default=10, help="number of steps for PGD (default 10)")
     parser.add_argument("--corruption-types", type=str, nargs="+", default=None, help="type of corruption to add (supports shot_noise, motion_blur, snow, pixelate, gaussian_noise, defocus_blur, brightness, fog, zoom_blur, frost, glass_blur, impulse_noise, contrast, jpeg_compression, elastic_transform")
     parser.add_argument("--corruption-severity", type=int, default=1, help="Severity of corruption, supports ints 1 through 5 (default 1)")
@@ -155,6 +164,7 @@ if __name__ == "__main__":
     parser.add_argument("--weights-path", type=str, default=None, help="Path to weights file")
 
     parser.add_argument("--neg-replace-layers", type=int, nargs="+", default=None, help="layer indices at which the layer is placed with the custom layer (NOTE: happens after removal and insertion)")
+    parser.add_argument("--newtest", action="store_true", default=False, help="add in layers into features")
     args = parser.parse_args()
 
     # wandb
