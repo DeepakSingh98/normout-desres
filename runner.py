@@ -14,7 +14,7 @@ parser.add_argument("--epochs", type=int, default=100, help="number of epochs (d
 parser.add_argument("--batch-size", type=int, default=256, help="batch size (default 256)")
 parser.add_argument("--num-workers", type=int, default=4, help="number of workers used for data loading (default 4)")
 parser.add_argument("--num-gpus", type=int, default=1, help="number of gpus to use (default 1)")
-parser.add_argument("--dset-name", type=str, default="CIFAR10", help="dataset name (default CIFAR10, also supports MNIST-Fashion)")
+parser.add_argument("--dataset", type=str, default="CIFAR10", help="dataset name (default CIFAR10, also supports MNIST-Fashion, SplitCIFAR10)")
 parser.add_argument("--no-data-augmentation", default=False, action="store_true", help="Don't use data augmentation (default False)")
 parser.add_argument("--optimizer", type=str, default="SGDM", help="optimizer (default SGDM, also supports Adam)")
 parser.add_argument("--lr", type=float, default=0.01, help="learning rate (default 0.01)")
@@ -35,13 +35,11 @@ parser.add_argument("--remove-layers", type=int, nargs="+", default=None, help="
 parser.add_argument("--insert-layers", type=int, nargs="+", default=None, help="layer indices at which a custom layer is inserted (NOTE: happens after removal)")
 # NormOut settings
 parser.add_argument("--no-abs", default=False, action="store_true", help="Don't use absolute value of input during NormOut (default False)")
-parser.add_argument("--max-type", type=str, default="spatial", help="Type of max to use in NormOut (default spatial, supports channel, global)")
-parser.add_argument("--on-at-inference", default=False, action="store_true", help="Turn layer on at inference time (default False)")
 parser.add_argument("--normout-delay-epochs", type=int, default=0, help="number of epochs to delay using normout")
-# SigmoidOut settings
-parser.add_argument("--normalization-type", type=str, default="SpatialMax", help="type of normalization to use (defautl SpatialMax), supports SpatialMax, SpatialSigmoid, TemporalMax, TemporalSigmoid, SpatiotemporalSigmoid, SpatiotemporalMax")
+parser.add_argument("--normalization-type", type=str, default="SpatiotemporalMax", help="type of normalization to use (default SpatiotemporalMax), supports SpatialMax, TemporalMax, SpatiotemporalMax")
+parser.add_argument("--temperature", type=int, default=1,help="Temperature to use in NormOut (default 1)")
 # attacks
-parser.add_argument("--all-attacks-off", default=False, action="store_true", help="Turn all attacks off (default False)")
+parser.add_argument("--all-attacks-off", default=True, action="store_true", help="Turn all attacks off (default False)")
 parser.add_argument("--no-fgm", default=False, action="store_true", help="Don't use adversarial fgm (default False)")
 parser.add_argument("--no-pgd-ce", default=True, action="store_true", help="Don't use adversarial pgd-ce (default False)")
 parser.add_argument("--no-pgd-t", default=True, action="store_true", help="Don't use adversarial pgd-t (default False)")
@@ -59,12 +57,10 @@ parser.add_argument("--pgd-steps", type=int, default=10, help="number of steps f
 parser.add_argument("--corruption-types", type=str, nargs="+", default=None, help="type of corruption to add (supports shot_noise, motion_blur, snow, pixelate, gaussian_noise, defocus_blur, brightness, fog, zoom_blur, frost, glass_blur, impulse_noise, contrast, jpeg_compression, elastic_transform")
 parser.add_argument("--corruption-severity", type=int, default=1, help="Severity of corruption, supports ints 1 through 5 (default 1)")
 parser.add_argument("--log-adversarial-examples", default=False, action="store_true", help="Log adversarial examples (default False)")
-
 # logging
 parser.add_argument("--no-log-sparsity", default=False, action="store_true", help="Don't log sparsity (default False")
 parser.add_argument("--log-input-stats", default=True, action="store_true", help="Log input stats (default False)")
-# use ecoc
-parser.add_argument("--no-ecoc", default=True, action="store_true", help="Don't use error correcting output codes (default False)")
+
 args = parser.parse_args()
 
 # wandb
@@ -89,6 +85,8 @@ for k, v in config.items():
 model = CustomModel(**vars(args))
 
 wandb_logger.watch(model)
+
+if args.continual_learning:
 
 # train
 trainer = Trainer(gpus=args.num_gpus, logger=wandb_logger, max_epochs=args.epochs)
