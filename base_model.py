@@ -10,7 +10,7 @@ import torchmetrics
 import torchvision
 import torchvision.transforms as transforms
 
-from attacks import Attacks
+from adversarial_attacks.attacks import Attacks
 
 class BasicLightningModel(Attacks, pl.LightningModule, ABC):
     """
@@ -23,7 +23,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         # dataloader
         batch_size,
         num_workers,
-        dset_name,
+        dataset,
         no_data_augmentation,
         use_robustbench_data,
         # optimizer
@@ -41,7 +41,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         # set attributes
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.dset_name = dset_name
+        self.dataset = dataset
         self.use_data_augmentation = not no_data_augmentation
         self.optimizer = optimizer
         self.lr = lr
@@ -53,7 +53,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
             self.use_data_augmentation = False
 
         # dataset
-        self.define_dataset(dset_name)
+        self.dataset(dataset)
 
         # accuracy metrics
         self.train_acc: torchmetrics.Accuracy = torchmetrics.Accuracy()
@@ -84,8 +84,8 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
     def calculate_loss(self, y, y_hat):
         return F.cross_entropy(y_hat, y)
 
-    def define_dataset(self, dset_name):
-        if dset_name == "MNIST-Fashion":
+    def dataset(self, dataset):
+        if dataset == "MNIST-Fashion":
             
             assert not self.use_data_augmentation # no data aug supported for MNIST-Fashion
 
@@ -108,7 +108,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
             self.num_channels = 1
             self.num_classes = 10
 
-        elif dset_name == "CIFAR10":
+        elif dataset == "CIFAR10":
 
             self.preprocess_means = [0.4914, 0.4822, 0.4465]
             self.preprocess_stds = [0.2023, 0.1994, 0.2010]
@@ -175,6 +175,8 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
                 
             self.num_channels = 3
             self.num_classes = 10
+        
+        elif dataset == 'SplitCIFAR10':
 
         else:
             raise NotImplementedError("Dataset not implemented (must be MNIST-Fashion or CIFAR10)")
