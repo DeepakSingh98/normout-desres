@@ -28,14 +28,13 @@ class CustomModel(BasicLightningModel):
         no_batch_norm, 
         custom_layer_name, 
         no_abs,
-        on_at_inference, 
         dropout_p,
         topk_k,
         remove_layers,
         insert_layers,
         replace_layers,
         no_log_sparsity,
-        log_input_stats,
+        no_log_stats,
         normalization_type,
         **kwargs
     ):
@@ -46,16 +45,17 @@ class CustomModel(BasicLightningModel):
         use_batch_norm = not no_batch_norm
         use_abs = not no_abs
         log_sparsity = not no_log_sparsity
+        log_stats = not no_log_stats
         
         # configure custom layer
         if custom_layer_name is None:
             self.custom_layer = None
         elif custom_layer_name == "TopK":
-            self.custom_layer = TopK(topk_k, on_at_inference, log_input_stats, log_sparsity)
+            self.custom_layer = TopK(topk_k, log_stats, log_sparsity)
         elif custom_layer_name == "Dropout":
-            self.custom_layer = CustomDropout(dropout_p, on_at_inference, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats)
+            self.custom_layer = CustomDropout(dropout_p, log_sparsity_bool=log_sparsity, log_stats_bool=log_stats)
         elif custom_layer_name == "NormOut":
-            self.custom_layer = NormOut(normalization_type, log_sparsity_bool=log_sparsity, log_input_stats_bool=log_input_stats, use_abs=use_abs)
+            self.custom_layer = NormOut(normalization_type, log_sparsity_bool=log_sparsity, log_stats_bool=log_stats, use_abs=use_abs)
         else:
             raise ValueError("custom_layer_name must be 'Dropout', 'NormOut', or 'TopK'")
         

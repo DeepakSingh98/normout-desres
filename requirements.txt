@@ -8,7 +8,7 @@ argon2-cffi-bindings==21.2.0
 astunparse==1.6.2
 async-timeout==4.0.2
 attrs==19.3.0
-autoattack @ git+https://github.com/fra31/auto-attack.git@6482e4d6fbeeb51ae9585c41b16d50d14576aadc
+#autoattack @ git+https://github.com/fra31/auto-attack.git@6482e4d6fbeeb51ae9585c41b16d50d14576aadc
 Automat==0.8.0
 Babel==2.9.1
 backcall==0.1.0
@@ -17,14 +17,14 @@ blinker==1.4
 bottle==0.12.15
 cached-property==1.5.1
 cachetools==4.0.0
-caffe==1.0.0
+#caffe==1.0.0
 certifi==2019.11.28
 cffi==1.15.0
 chardet==3.0.4
 charset-normalizer==2.0.12
 cleverhans==4.0.0
 Click==7.0
-cloud-init==21.4
+#cloud-init==21.4
 cloudpickle==2.0.0
 colorama==0.4.3
 command-not-found==0.3
@@ -179,7 +179,7 @@ pyzmq==18.1.1
 requests==2.25.1
 requests-oauthlib==1.0.0
 requests-unixsocket==0.2.0
-robustbench @ git+https://github.com/RobustBench/robustbench@df316217f4bb929e96525044e3aca620238b6f16
+#robustbench @ git+https://github.com/RobustBench/robustbench@df316217f4bb929e96525044e3aca620238b6f16
 rsa==4.0
 scikit-cuda==0.5.3
 scikit-image==0.16.2

@@ -2,7 +2,7 @@ def set_tags(args):
     """
     Set wandb tags for the experiment.
     """
-    tags = [args.model_name, args.optimizer, args.dset_name]
+    tags = [args.model_name, args.optimizer, args.dataset_name]
     if args.custom_layer_name is not None:
         tags.append(args.custom_layer_name)
         if args.custom_layer_name == "Dropout":

@@ -14,7 +14,7 @@ parser.add_argument("--epochs", type=int, default=100, help="number of epochs (d
 parser.add_argument("--batch-size", type=int, default=256, help="batch size (default 256)")
 parser.add_argument("--num-workers", type=int, default=4, help="number of workers used for data loading (default 4)")
 parser.add_argument("--num-gpus", type=int, default=1, help="number of gpus to use (default 1)")
-parser.add_argument("--dataset", type=str, default="CIFAR10", help="dataset name (default CIFAR10, also supports MNIST-Fashion, SplitCIFAR10)")
+parser.add_argument("--dataset_name", type=str, default="CIFAR10", help="dataset_name (default CIFAR10, also supports MNIST-Fashion, SplitCIFAR10)")
 parser.add_argument("--no-data-augmentation", default=False, action="store_true", help="Don't use data augmentation (default False)")
 parser.add_argument("--optimizer", type=str, default="SGDM", help="optimizer (default SGDM, also supports Adam)")
 parser.add_argument("--lr", type=float, default=0.01, help="learning rate (default 0.01)")
@@ -59,7 +59,7 @@ parser.add_argument("--corruption-severity", type=int, default=1, help="Severity
 parser.add_argument("--log-adversarial-examples", default=False, action="store_true", help="Log adversarial examples (default False)")
 # logging
 parser.add_argument("--no-log-sparsity", default=False, action="store_true", help="Don't log sparsity (default False")
-parser.add_argument("--log-input-stats", default=True, action="store_true", help="Log input stats (default False)")
+parser.add_argument("--no-log-stats", default=False, action="store_true", help="Log input stats (default False)")
 
 args = parser.parse_args()
 
@@ -67,10 +67,10 @@ args = parser.parse_args()
 tags = set_tags(args)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 wandb_logger = WandbLogger(
-    project="normout",
+    project="normout-continual",
     name=(("-").join(tags) + "-" + timestamp),
     tags=tags,
-    entity="normout",
+    entity="deepaksingh",
     config=args,
     settings=wandb.Settings(start_method="thread")
 )
@@ -84,9 +84,7 @@ for k, v in config.items():
 # get model
 model = CustomModel(**vars(args))
 
-wandb_logger.watch(model)
-
-if args.continual_learning:
+#wandb_logger.watch(model)
 
 # train
 trainer = Trainer(gpus=args.num_gpus, logger=wandb_logger, max_epochs=args.epochs)

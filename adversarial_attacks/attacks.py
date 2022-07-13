@@ -5,7 +5,7 @@ from pytorch_lightning.loggers import WandbLogger
 from robustbench.eval import benchmark
 from cleverhans.torch.attacks.fast_gradient_method import fast_gradient_method
 from cleverhans.torch.attacks.projected_gradient_descent import projected_gradient_descent
-from cw_attacks import carlini_wagner_l2
+from .cw_attacks import carlini_wagner_l2
 from robustbench.data import load_cifar10c, load_cifar10
 from robustbench.utils import clean_accuracy
 import torchvision.transforms as transforms
@@ -63,7 +63,9 @@ class Attacks(ABC):
         self.corruption_severity = corruption_severity
         self.log_adversarial_examples = log_adversarial_examples
 
-        if all_attacks_off:
+        self.all_attacks_off = all_attacks_off
+        
+        if self.all_attacks_off:
             self.use_adversarial_fgm = False
             self.use_adversarial_pgd_ce = False
             self.use_adversarial_pgd_t = False
@@ -79,9 +81,9 @@ class Attacks(ABC):
         """
         `pytorch_lightning` hook override to insert attacks at end of val epoch.
         """
-        if self.current_epoch % 10 == 0:
+        if self.current_epoch % 10 == 0 and not self.all_attacks_off:
 
-            if self.dset_name != 'CIFAR10':
+            if self.dataset_name != 'CIFAR10':
                 raise NotImplementedError('Only CIFAR-10 is supported for now.')
 
             x, y = load_cifar10(n_examples=256)

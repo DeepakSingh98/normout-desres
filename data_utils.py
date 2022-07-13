@@ -184,7 +184,7 @@ AVAILABLE_TRANSFORMS = {
 DATASET_CONFIGS = {
     'mnist': {'size': 32, 'channels': 1, 'classes': 10},
     'mnist28': {'size': 28, 'channels': 1, 'classes': 10},
-    'CIFAR10': {'size': 32, 'channels': 3. 'classes': 10}
+    'CIFAR10': {'size': 32, 'channels': 3, 'classes': 10}
 }
 
 

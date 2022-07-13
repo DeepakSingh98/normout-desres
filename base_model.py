@@ -12,6 +12,8 @@ import torchvision.transforms as transforms
 
 from adversarial_attacks.attacks import Attacks
 
+from data_utils import get_multitask_experiment
+
 class BasicLightningModel(Attacks, pl.LightningModule, ABC):
     """
     Defines a base `pl.LightningModule` inherited by all models, responsible for configuring 
@@ -23,7 +25,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         # dataloader
         batch_size,
         num_workers,
-        dataset,
+        dataset_name,
         no_data_augmentation,
         use_robustbench_data,
         # optimizer
@@ -41,7 +43,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         # set attributes
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.dataset = dataset
+        self.dataset_name = dataset_name
         self.use_data_augmentation = not no_data_augmentation
         self.optimizer = optimizer
         self.lr = lr
@@ -51,9 +53,8 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
 
         if use_robustbench_data:
             self.use_data_augmentation = False
-
-        # dataset
-        self.dataset(dataset)
+        
+        self.dataset(dataset_name)
 
         # accuracy metrics
         self.train_acc: torchmetrics.Accuracy = torchmetrics.Accuracy()
@@ -84,8 +85,8 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
     def calculate_loss(self, y, y_hat):
         return F.cross_entropy(y_hat, y)
 
-    def dataset(self, dataset):
-        if dataset == "MNIST-Fashion":
+    def dataset(self, dataset_name):
+        if dataset_name == "MNIST-Fashion":
             
             assert not self.use_data_augmentation # no data aug supported for MNIST-Fashion
 
@@ -108,7 +109,7 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
             self.num_channels = 1
             self.num_classes = 10
 
-        elif dataset == "CIFAR10":
+        elif dataset_name == "CIFAR10":
 
             self.preprocess_means = [0.4914, 0.4822, 0.4465]
             self.preprocess_stds = [0.2023, 0.1994, 0.2010]
@@ -176,10 +177,21 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
             self.num_channels = 3
             self.num_classes = 10
         
-        elif dataset == 'SplitCIFAR10':
+        elif dataset_name == 'SplitCIFAR10':
+
+            (train_dataset_names, test_dataset_names), config, classes_per_task = get_multitask_experiment(name=dataset_name, 
+                                                                                                scenario=self.scenario, 
+                                                                                                tasks=self.num_tasks, 
+                                                                                                data_dir="./dataset_names", 
+                                                                                                only_config=False, 
+                                                                                                verbose=False,
+                                                                                                exception=False)
+
+            self.num_channels = config['channels']
+            self.num_classes = config['classes']
 
         else:
-            raise NotImplementedError("Dataset not implemented (must be MNIST-Fashion or CIFAR10)")
+            raise NotImplementedError("dataset_name not implemented (must be MNIST-Fashion or CIFAR10)")
     
     def configure_optimizers(self):
         if self.optimizer == "SGDM":
