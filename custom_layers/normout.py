@@ -11,7 +11,7 @@ class NormOut(nn.Module, CustomLayer):
     by the max activation of the layer. When `use_abs` is True, we use the absolute value of the activations 
     instead of the activations themselves.
     """
-    def __init__(self, normalization_type: str, log_sparsity_bool: bool, log_input_stats_bool: bool, use_abs: bool, **kwargs):
+    def __init__(self, normalization_type: str, log_sparsity_bool: bool, log_stats_bool: bool, use_abs: bool, **kwargs):
 
         nn.Module.__init__(self)
         CustomLayer.__init__(self, custom_layer_name="NormOut")
@@ -19,12 +19,12 @@ class NormOut(nn.Module, CustomLayer):
         self.use_abs = use_abs
         self.normalization_type = normalization_type
         self.log_sparsity_bool = log_sparsity_bool
-        self.log_input_stats_bool = log_input_stats_bool
+        self.log_stats_bool = log_stats_bool
 
     def forward(self, x):
 
-        if self.log_input_stats_bool:
-            self.log_input_stats(x)
+        if self.log_stats_bool:
+            self.log_stats(x)
         if self.training:
 
             if self.use_abs:
@@ -58,6 +58,6 @@ class NormOut(nn.Module, CustomLayer):
         if self.log_sparsity_bool:
             self.log_sparsity(x)
         
-        self.log_input_stats(x)
+        self.log_stats(x)
 
         return x

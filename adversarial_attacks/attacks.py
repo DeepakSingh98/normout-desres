@@ -77,9 +77,9 @@ class Attacks(ABC):
             self.use_robustbench_l2 = False
             self.use_salt_and_pepper_attack = False
 
-    def on_validation_epoch_end(self):
+    def on_test_epoch_end(self):
         """
-        `pytorch_lightning` hook override to insert attacks at end of val epoch.
+        `pytorch_lightning` hook override to insert attacks at end of test epoch.
         """
         if self.current_epoch % 10 == 0 and not self.all_attacks_off:
 

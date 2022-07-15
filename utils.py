@@ -18,9 +18,9 @@ def set_tags(args):
     if not args.no_abs and (args.custom_layer_name == "NormOut" or args.custom_layer_name == "SigmoidOut"):
         tags.append(f'use_abs')
     if args.custom_layer_name == "NormOut":
-        tags.append(f"{args.max_type}")
-    if (args.custom_layer_name == "NormOut" or args.custom_layer_name == "Dropout") and args.on_at_inference:
-        tags.append("on_at_inference")
+        tags.append(f"{args.normalization_type}")
+    #if (args.custom_layer_name == "NormOut" or args.custom_layer_name == "Dropout") and args.on_at_inference:
+     #   tags.append("on_at_inference")
     if args.custom_layer_name is not None and args.replace_layers is not None:
         tags.append(f"replaced_{'_'.join([str(i) for i in args.replace_layers])}")
     if args.custom_layer_name is not None and args.insert_layers is not None:

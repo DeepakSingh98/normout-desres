@@ -14,7 +14,7 @@ parser.add_argument("--epochs", type=int, default=100, help="number of epochs (d
 parser.add_argument("--batch-size", type=int, default=256, help="batch size (default 256)")
 parser.add_argument("--num-workers", type=int, default=4, help="number of workers used for data loading (default 4)")
 parser.add_argument("--num-gpus", type=int, default=1, help="number of gpus to use (default 1)")
-parser.add_argument("--dataset_name", type=str, default="CIFAR10", help="dataset_name (default CIFAR10, also supports MNIST-Fashion, SplitCIFAR10)")
+parser.add_argument("--dataset-name", type=str, default="CIFAR10", help="dataset_name (default CIFAR10, also supports MNIST-Fashion, SplitCIFAR10)")
 parser.add_argument("--no-data-augmentation", default=False, action="store_true", help="Don't use data augmentation (default False)")
 parser.add_argument("--optimizer", type=str, default="SGDM", help="optimizer (default SGDM, also supports Adam)")
 parser.add_argument("--lr", type=float, default=0.01, help="learning rate (default 0.01)")
@@ -60,7 +60,8 @@ parser.add_argument("--log-adversarial-examples", default=False, action="store_t
 # logging
 parser.add_argument("--no-log-sparsity", default=False, action="store_true", help="Don't log sparsity (default False")
 parser.add_argument("--no-log-stats", default=False, action="store_true", help="Log input stats (default False)")
-
+# continual learning
+parser.add_argument("--num_tasks", type=int, default=5, help="Number of tasks for continual learning (default 5)")
 args = parser.parse_args()
 
 # wandb
@@ -87,5 +88,7 @@ model = CustomModel(**vars(args))
 #wandb_logger.watch(model)
 
 # train
+if args.dataset_name == "SplitCIFAR10":
+    trainer = Trainer(gpus=args.num_gpus, logger=wandb_logger, reload_dataloaders_every_n_epochs=model.epochs_per_task)
 trainer = Trainer(gpus=args.num_gpus, logger=wandb_logger, max_epochs=args.epochs)
 trainer.fit(model)
