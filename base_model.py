@@ -58,13 +58,14 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         if use_robustbench_data:
             self.use_data_augmentation = False
         
-        self.dataset(dataset_name, num_tasks)
+        self.define_dataset(dataset_name, num_tasks)
 
         # accuracy metrics
         self.train_acc: torchmetrics.Accuracy = torchmetrics.Accuracy()
-        self.test_acc: torchmetrics.Accuracy = torchmetrics.Accuracy()
+        self.validation_acc: torchmetrics.Accuracy = torchmetrics.Accuracy()
 
         self.epochs_per_task = int(epochs // num_tasks)
+        print(f"{self.epochs_per_task} epochs per task")
         if epochs % num_tasks != 0:
             raise ValueError("Total number of epochs must be exactly divisible by the number of tasks.")
 
@@ -81,19 +82,19 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         self.log("Train Loss", loss, on_step=True, on_epoch=True)
         return loss
 
-    def test_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         loss = self.calculate_loss(y, y_hat)
-        self.test_acc(y_hat, y)
-        self.log("Test Accuracy", self.test_acc, on_step=False, on_epoch=True)
-        self.log("Test Loss", loss, on_step=False, on_epoch=True)
+        self.validation_acc(y_hat, y)
+        self.log("Validation Accuracy", self.validation_acc, on_step=False, on_epoch=True)
+        self.log("Validation Loss", loss, on_step=False, on_epoch=True)
         return loss
     
     def calculate_loss(self, y, y_hat):
         return F.cross_entropy(y_hat, y)
 
-    def dataset(self, dataset_name, num_tasks):
+    def define_dataset(self, dataset_name, num_tasks):
 
         print(f"Dataset: {dataset_name}")
 
@@ -166,12 +167,12 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
                 )
             
             if self.use_robustbench_data:
-                    self.test_set = torchvision.datasets.CIFAR10(
+                    self.validation_set = torchvision.datasets.CIFAR10(
                     "./data", train=False, transform=self.robustbench_transforms, download=True
                 )
 
             else:    
-                self.test_set = torchvision.datasets.CIFAR10(
+                self.validation_set = torchvision.datasets.CIFAR10(
                     "./data", train=False, transform=self.plain_transforms, download=True, target_transform=target_transform
                 )
                 
@@ -192,10 +193,10 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
             ]
             # split them up into sub-tasks
             self.train_datasets = []
-            self.test_datasets = []
+            self.validation_datasets = []
             for labels in labels_per_task:
                 self.train_datasets.append(SubDataset(self.training_set, labels))
-                self.test_datasets.append(SubDataset(self.test_set, labels))
+                self.validation_datasets.append(SubDataset(self.validation_set, labels))
 
         #else:
          #   raise NotImplementedError("dataset_name not implemented (must be SplitCIFAR10)")
@@ -210,15 +211,14 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         return optimizer
 
     def train_dataloader(self):
-
-        # Increment the task each time the dataloader is reloaded
-        if self.current_epoch % self.epochs_per_task == 0 and self.current_epoch != 0:
-            self.current_task += 1
         
         if self.dataset_name == "SplitCIFAR10":
 
+            if (self.current_epoch % self.epochs_per_task == 0) or self.current_epoch == 0:
+                print(f"Starting task {self.current_task}...")
+
             # Load train sets per task
-            current_training_set = self.training_set[self.current_task]
+            current_training_set = self.train_datasets[self.current_task]
 
             return torch.utils.data.DataLoader(
                 current_training_set,
@@ -235,19 +235,15 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
                 num_workers=self.num_workers,
             )
 
-    def test_dataloader(self):
-
-        # Increment the task each time the dataloader is reloaded
-        if self.current_epoch % self.epochs_per_task == 0 and self.current_epoch != 0:
-            self.current_task += 1
+    def val_dataloader(self):
 
         if self.dataset_name == "SplitCIFAR10":
 
             # Load val dataset concat all seen tasks
-            current_test_set = self.test_set[:self.current_task]
+            current_validation_set = torch.utils.data.ConcatDataset(self.validation_datasets[:(self.current_task+1)])
 
             return torch.utils.data.DataLoader(
-                current_test_set,
+                current_validation_set,
                 batch_size=self.batch_size,
                 shuffle=False,
                 num_workers=self.num_workers,
@@ -262,5 +258,10 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
             )
 
     # run attacks 
-    def on_test_epoch_end(self):
-        Attacks.on_test_epoch_end(self)
+    def on_validation_epoch_end(self):
+        Attacks.on_val_epoch_end(self)
+
+        if (self.dataset_name == "SplitCIFAR10") and ((self.current_epoch + 1) % self.epochs_per_task == 0) and (self.current_epoch != 0) and self.epochs_per_task != 1:
+            print(f"End of task {self.current_task}...")
+            self.current_task += 1
+

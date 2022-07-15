@@ -16,7 +16,7 @@ class SubDataset(Dataset):
     def __init__(self, original_dataset, sub_labels, target_transform=None):
         super().__init__()
         self.dataset = original_dataset
-        self.sub_indeces = []
+        self.sub_indices = []
         for index in range(len(self.dataset)):
             if hasattr(original_dataset, "targets"):
                 if self.dataset.target_transform is None:
@@ -26,14 +26,14 @@ class SubDataset(Dataset):
             else:
                 label = self.dataset[index][1]
             if label in sub_labels:
-                self.sub_indeces.append(index)
+                self.sub_indices.append(index)
         self.target_transform = target_transform
 
     def __len__(self):
-        return len(self.sub_indeces)
+        return len(self.sub_indices)
 
     def __getitem__(self, index):
-        sample = self.dataset[self.sub_indeces[index]]
+        sample = self.dataset[self.sub_indices[index]]
         if self.target_transform:
             target = self.target_transform(sample[1])
             sample = (sample[0], target)

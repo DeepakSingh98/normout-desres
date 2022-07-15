@@ -89,6 +89,8 @@ model = CustomModel(**vars(args))
 
 # train
 if args.dataset_name == "SplitCIFAR10":
-    trainer = Trainer(gpus=args.num_gpus, logger=wandb_logger, reload_dataloaders_every_n_epochs=model.epochs_per_task)
-trainer = Trainer(gpus=args.num_gpus, logger=wandb_logger, max_epochs=args.epochs)
+    trainer = Trainer(gpus=args.num_gpus, logger=wandb_logger, max_epochs=args.epochs, reload_dataloaders_every_n_epochs=model.epochs_per_task, num_sanity_val_steps=0)
+else:
+    trainer = Trainer(gpus=args.num_gpus, logger=wandb_logger, max_epochs=args.epochs)
+
 trainer.fit(model)

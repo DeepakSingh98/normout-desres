@@ -77,7 +77,7 @@ class Attacks(ABC):
             self.use_robustbench_l2 = False
             self.use_salt_and_pepper_attack = False
 
-    def on_test_epoch_end(self):
+    def on_val_epoch_end(self):
         """
         `pytorch_lightning` hook override to insert attacks at end of test epoch.
         """
