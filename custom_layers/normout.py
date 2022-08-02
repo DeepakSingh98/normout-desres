@@ -1,7 +1,6 @@
 from os import truncate
 import torch
 import torch.nn as nn
-import numpy as np
 
 from custom_layers.custom_layer import CustomLayer
 
@@ -61,7 +60,8 @@ class NormOut(nn.Module, CustomLayer):
                 raise NotImplementedError("normalization type not implemented")
 
             if self.softmax:
-                norm_x = np.exp(x_prime / self.temperature) / np.sum(np.exp(x_prime_max / self.temperature), axis=0)
+                #import ipdb; ipdb.set_trace()
+                norm_x = torch.exp(x_prime / self.temperature) / torch.sum(torch.exp(x_prime_max/ self.temperature), axis=0)
 
             else:
                 norm_x = x_prime / x_prime_max

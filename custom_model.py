@@ -27,16 +27,18 @@ class CustomModel(BasicLightningModel):
         pretrained,
         no_batch_norm, 
         custom_layer_name, 
-        no_abs,
-        normout_delay_epochs,
         dropout_p,
         topk_k,
         remove_layers,
         insert_layers,
         replace_layers,
+        no_abs,
+        normout_delay_epochs,
         no_log_sparsity,
         no_log_stats,
         normalization_type,
+        temperature,
+        softmax,
         **kwargs
     ):
         super().__init__(**kwargs)
@@ -137,7 +139,7 @@ class CustomModel(BasicLightningModel):
         layers.insert(i, layer)
 
     def forward(self, x, **kwargs):
-        x = self.model(x, self.current_epoch)
+        x = self.model(x)
         return x
 
     def report_state(self, model_name, custom_layer_name, insert_layers, custom_layer):

@@ -64,10 +64,11 @@ class BasicLightningModel(Attacks, pl.LightningModule, ABC):
         self.train_acc: torchmetrics.Accuracy = torchmetrics.Accuracy()
         self.validation_acc: torchmetrics.Accuracy = torchmetrics.Accuracy()
 
-        self.epochs_per_task = int(epochs // num_tasks)
-        print(f"{self.epochs_per_task} epochs per task")
-        if epochs % num_tasks != 0:
-            raise ValueError("Total number of epochs must be exactly divisible by the number of tasks.")
+        if dataset_name == "SplitCIFAR10":
+            self.epochs_per_task = int(epochs // num_tasks)
+            print(f"{self.epochs_per_task} epochs per task")
+            if epochs % num_tasks != 0:
+                raise ValueError("Total number of epochs must be exactly divisible by the number of tasks.")
 
     @abstractmethod
     def forward(self, x):
