@@ -21,6 +21,7 @@ parser.add_argument("--lr", type=float, default=0.01, help="learning rate (defau
 parser.add_argument("--momentum", type=float, default=0.9, help="momentum value (default 0.9)")
 parser.add_argument("--weight-decay", type=float, default=0.0001, help="weight decay value (default 0.0001)")
 parser.add_argument("--custom-tag", type=str, default=None, help="custom tag to be added to wandb log")
+parser.add_argument("--seed", type=int, default=1234, help="Random seed (default 1234)")
 # model settings
 parser.add_argument("--model-name", type=str, default="VGG16", help="model name (default VGG16, supports resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, wide_resnet101_2)")
 parser.add_argument("--custom-layer-name", type=str, default=None, help="custom layer (default None, supports 'ReLU', 'NormOut', 'Dropout', 'SigmoidOut', and 'TopK')")
@@ -38,6 +39,7 @@ parser.add_argument("--no-abs", default=False, action="store_true", help="Don't 
 parser.add_argument("--normout-delay-epochs", type=int, default=0, help="number of epochs to delay using normout")
 parser.add_argument("--normalization-type", type=str, default="SpatiotemporalMax", help="type of normalization to use (default SpatiotemporalMax), supports SpatialMax, TemporalMax, SpatiotemporalMax")
 parser.add_argument("--temperature", type=int, default=1,help="Temperature to use in NormOut (default 1)")
+parser.add_argument("--softmax", default=False, action="store_true", help="use softmax in normalization operation")
 # attacks
 parser.add_argument("--all-attacks-off", default=True, action="store_true", help="Turn all attacks off (default False)")
 parser.add_argument("--no-fgm", default=False, action="store_true", help="Don't use adversarial fgm (default False)")
@@ -62,6 +64,13 @@ parser.add_argument("--no-log-sparsity", default=False, action="store_true", hel
 parser.add_argument("--no-log-stats", default=False, action="store_true", help="Log input stats (default False)")
 # continual learning
 parser.add_argument("--num_tasks", type=int, default=5, help="Number of tasks for continual learning (default 5)")
+# elastic weight consolidation
+# parser.add_argument("--ewc_lambda", type-int, default=0, help="hyperparam: how strong to weigh EWC-loss ('regularisation strength')")
+# parser.add_argument("--gamma", type=float, default=1., help="hyperparam (online EWC): decay-term for old tasks' contribution to quadratic term")
+# parser.add_argument("--online", type=bool, default=True, help="'online' (=single quadratic term) or 'offline' (=quadratic term per task) EWC")
+# parser.add_argument("--fisher_n", type=int, default=None, help="sample size for estimating FI-matrix (if 'None', full pass over dataset)")
+# parser.add_argument("--emp-FI", type=bool, default=False, help="if True, use provided labels to calculate FI ('empirical FI'); else predicted labels")
+#  parse args
 args = parser.parse_args()
 
 # wandb

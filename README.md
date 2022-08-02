@@ -23,6 +23,10 @@
 
 ### HMS O2 Interactive Usage
 
-Request a node with `srun -n 6 --mem 40G --pty -t 10:00:00 -p gpu --gres=gpu:teslaV100:1 bash`, activate your relevant environment (Xander: `source activate sdm_env`, Deepak: `conda activate env_pytorch`), then call `module load gcc/9.2.0`. Run with `python runner.py`.  Use `python runner.py -h` for command line arguments.
+Request a node with `srun -n 6 --mem 40G --pty -t 10:00:00 -p gpu --gres=gpu:teslaV100:1 bash`, activate your relevant environment (Xander: `source activate sdm_env`, Deepak: `conda activate normout-env`), then call `module load gcc/9.2.0`. Run with `python runner.py`.  Use `python runner.py -h` for command line arguments.
 
 *Note, RobustBench should be installed via `pip install git+https://github.com/RobustBench/robustbench`. Make sure you are running python >= 3.7.1 and pytorch-lightning >= 1.6.1*
+
+### List of useful commands
+python runner.py --dataset-name SplitCIFAR10
+python runner.py --dataset-name SplitCIFAR10 --custom-layer-name NormOut --replace-layers 48 51

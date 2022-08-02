@@ -28,6 +28,7 @@ class CustomModel(BasicLightningModel):
         no_batch_norm, 
         custom_layer_name, 
         no_abs,
+        normout_delay_epochs,
         dropout_p,
         topk_k,
         remove_layers,
@@ -55,7 +56,12 @@ class CustomModel(BasicLightningModel):
         elif custom_layer_name == "Dropout":
             self.custom_layer = CustomDropout(dropout_p, log_sparsity_bool=log_sparsity, log_stats_bool=log_stats)
         elif custom_layer_name == "NormOut":
-            self.custom_layer = NormOut(normalization_type, log_sparsity_bool=log_sparsity, log_stats_bool=log_stats, use_abs=use_abs)
+            self.custom_layer = NormOut(normalization_type=normalization_type, 
+                                        log_sparsity_bool=log_sparsity, 
+                                        log_stats_bool=log_stats, 
+                                        use_abs=use_abs,
+                                        softmax=softmax,
+                                        temperature=temperature)
         else:
             raise ValueError("custom_layer_name must be 'Dropout', 'NormOut', or 'TopK'")
         
@@ -64,7 +70,10 @@ class CustomModel(BasicLightningModel):
 
         # get model
         if model_name == "VGG16":
-            layers: List[nn.Module] = vgg16_layers(self.num_channels, self.num_classes, use_batch_norm, dropout_p=dropout_p)
+            layers: List[nn.Module] = vgg16_layers(self.num_channels, 
+                                                    self.num_classes,
+                                                    use_batch_norm,
+                                                    dropout_p=dropout_p)
         elif model_name in [
             "resnet18",
             "resnet34",
@@ -127,8 +136,8 @@ class CustomModel(BasicLightningModel):
         layer.set_index(i)
         layers.insert(i, layer)
 
-    def forward(self, x):
-        x = self.model(x)
+    def forward(self, x, **kwargs):
+        x = self.model(x, self.current_epoch)
         return x
 
     def report_state(self, model_name, custom_layer_name, insert_layers, custom_layer):
