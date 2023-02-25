@@ -48,10 +48,10 @@ normout_params.add_argument("--temperature", type=int, default=1,help="Temperatu
 normout_params.add_argument("--softmax", default=False, action="store_true", help="use softmax in normalization operation")
 
 adv_params = parser.add_argument_group('Adversarial Attack Settings')
-adv_params.add_argument("--all-attacks-off", default=True, action="store_true", help="Turn all attacks off (default False)")
+adv_params.add_argument("--all-attacks-off", default=False, action="store_true", help="Turn all attacks off (default False)")
 adv_params.add_argument("--no-fgm", default=False, action="store_true", help="Don't use adversarial fgm (default False)")
-adv_params.add_argument("--no-pgd-ce", default=True, action="store_true", help="Don't use adversarial pgd-ce (default False)")
-adv_params.add_argument("--no-pgd-t", default=True, action="store_true", help="Don't use adversarial pgd-t (default False)")
+adv_params.add_argument("--no-pgd-ce", default=False, action="store_true", help="Don't use adversarial pgd-ce (default False)")
+adv_params.add_argument("--no-pgd-t", default=False, action="store_true", help="Don't use adversarial pgd-t (default False)")
 adv_params.add_argument("--no-cw-l2-ce", default=True, action="store_true", help="Don't use untargeted Carlini wagner L2 attacks (default False)")
 adv_params.add_argument("--no-cw-l2-t", default=True, action="store_true", help="Don't use targeted Carlini wagner L2 attacks (default False)")
 adv_params.add_argument("--no-fab",  default=True, action="store_true", help="Don't use Untargeted FAB attack (default False)")
