@@ -39,7 +39,7 @@ class ReplacableVGG16BN(BasicLightningModel):
         no_log_sparsity=False,
         log_input_stats=True,
         weights_path=None,
-        save_path,
+        save_path=None,
         **kwargs
     ):
         super().__init__(**kwargs)
