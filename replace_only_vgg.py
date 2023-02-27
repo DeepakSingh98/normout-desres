@@ -140,6 +140,8 @@ if __name__ == "__main__":
     parser.add_argument("--max-type", type=str, default="spatial", help="Type of max to use in NormOut (default spatial, supports channel, global)")
     parser.add_argument("--on-at-inference", default=False, action="store_true", help="Turn layer on at inference time (default False)")
     parser.add_argument("--normout-delay-epochs", type=int, default=0, help="number of epochs to delay using normout")
+    parser.add_argument("--temperature", type=int, default=1,help="Temperature to use in NormOut (default 1)")
+    parser.add_argument("--softmax", default=False, action="store_true", help="use softmax in normalization operation")
     # SigmoidOut settings
     parser.add_argument("--normalization-type", type=str, default="SpatialMax", help="type of normalization to use (defautl SpatialMax), supports SpatialMax, SpatialSigmoid, TemporalMax, TemporalSigmoid, SpatiotemporalSigmoid, SpatiotemporalMax")
     # attacks
