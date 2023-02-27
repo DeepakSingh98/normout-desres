@@ -15,7 +15,7 @@ general_params.add_argument("--num-gpus", type=int, default=1, help="number of g
 general_params.add_argument("--dataset-name", type=str, default="CIFAR10", help="dataset_name (default CIFAR10, also supports MNIST-Fashion, SplitCIFAR10)")
 general_params.add_argument("--no-data-augmentation", default=False, action="store_true", help="Don't use data augmentation (default False)")
 general_params.add_argument("--custom-tag", type=str, default=None, help="custom tag to be added to wandb log")
-general_params.add_argument("--seed", type=int, default=1, help="Random seed (default 1234)")
+general_params.add_argument("--seed", type=int, default=0, help="Random seed (default 1234)")
 
 hyperparams = parser.add_argument_group('Hyperparameters and Optimiizer')
 hyperparams.add_argument("--epochs", type=int, default=100, help="number of epochs (default 100)")
