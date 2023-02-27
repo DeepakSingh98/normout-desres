@@ -79,6 +79,10 @@ continual_params.add_argument("--online", type=bool, default=True, help="'online
 continual_params.add_argument("--fisher_n", type=int, default=None, help="sample size for estimating FI-matrix (if 'None', full pass over dataset)")
 continual_params.add_argument("--emp-FI", type=bool, default=False, help="if True, use provided labels to calculate FI ('empirical FI'); else predicted labels")
 
+weights_params = params.add_argument_group("Saving and Loading Weights Settings")
+weights_params.add_argument("--weights-path", type=str, default=None, help="Path to weights file")
+weights_params.add_argument("--save-path", type=str, default=None, help="Path to save weights to")
+
 args = parser.parse_args()
 
 # wandb
@@ -111,3 +115,6 @@ else:
     trainer = Trainer(gpus=args.num_gpus, logger=wandb_logger, max_epochs=args.epochs)
 
 trainer.fit(model)
+
+if args.save_path != None:
+    torch.save(model.state_dict(), "weights/" + args.save_path)
