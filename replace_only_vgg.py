@@ -124,6 +124,7 @@ if __name__ == "__main__":
     parser.add_argument("--momentum", type=float, default=0.9, help="momentum value (default 0.9)")
     parser.add_argument("--weight-decay", type=float, default=0.0001, help="weight decay value (default 0.0001)")
     parser.add_argument("--custom-tag", type=str, default=None, help="custom tag to be added to wandb log")
+    parser.add_argument("--seed", type=int, default=1234, help="Random seed (default 1234)")
     # model settings
     parser.add_argument("--model-name", type=str, default="VGG16", help="model name (default VGG16, supports resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, wide_resnet101_2)")
     parser.add_argument("--custom-layer-name", type=str, default=None, help="custom layer (default None, supports 'ReLU', 'NormOut', 'Dropout', 'SigmoidOut', and 'TopK')")
