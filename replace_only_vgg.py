@@ -31,6 +31,7 @@ class ReplacableVGG16BN(BasicLightningModel):
         custom_layer_name, 
         neg_replace_layers,
         newtest,
+        seed,
         normalization_type,
         dropout_p=0.5,
         topk_k=40,
