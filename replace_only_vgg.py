@@ -199,4 +199,4 @@ if __name__ == "__main__":
     trainer.fit(model)
 
     if args.save_path != None:
-        torch.save(model.state_dict(), args.save_path)
+        torch.save(model.state_dict(), "weights/" + args.save_path)
