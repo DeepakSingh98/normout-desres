@@ -33,7 +33,7 @@ def set_tags(args):
         tags.append(f"inserted_{'_'.join([str(i) for i in args.insert_layers])}")
     if args.remove_layers is not None:
         tags.append(f"removed_{'_'.join([str(i) for i in args.remove_layers])}")
-    # tags.append(f"Seed={args.seed}")
+    tags.append(f"Seed={args.seed}")
     return tags
 
 # Credit: https://github.com/GMvandeVen/continual-learning/blob/master/data.py
