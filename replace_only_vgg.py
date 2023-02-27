@@ -143,7 +143,7 @@ if __name__ == "__main__":
     parser.add_argument("--temperature", type=int, default=1,help="Temperature to use in NormOut (default 1)")
     parser.add_argument("--softmax", default=False, action="store_true", help="use softmax in normalization operation")
     # SigmoidOut settings
-    parser.add_argument("--normalization-type", type=str, default="SpatialMax", help="type of normalization to use (defautl SpatialMax), supports SpatialMax, SpatialSigmoid, TemporalMax, TemporalSigmoid, SpatiotemporalSigmoid, SpatiotemporalMax")
+    parser.add_argument("--normalization-type", type=str, default="SpatiotemporalMax", help="type of normalization to use (default SpatiotemporalMax), supports SpatialMax, TemporalMax, SpatiotemporalMax")
     # attacks
     parser.add_argument("--all-attacks-off", default=False, action="store_true", help="Turn all attacks off (default False)")
     parser.add_argument("--no-fgm", default=False, action="store_true", help="Don't use adversarial fgm (default False)")
