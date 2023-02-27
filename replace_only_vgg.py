@@ -198,5 +198,5 @@ if __name__ == "__main__":
     trainer = Trainer(gpus=args.num_gpus, logger=wandb_logger, max_epochs=args.epochs)
     trainer.fit(model)
 
-    if save_path != None:
+    if args.save_path != None:
         torch.save(model.state_dict(), save_path)
