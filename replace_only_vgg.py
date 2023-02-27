@@ -39,6 +39,7 @@ class ReplacableVGG16BN(BasicLightningModel):
         no_log_sparsity=False,
         log_input_stats=True,
         weights_path=None,
+        save_path,
         **kwargs
     ):
         super().__init__(**kwargs)
@@ -164,6 +165,7 @@ if __name__ == "__main__":
     parser.add_argument("--corruption-severity", type=int, default=1, help="Severity of corruption, supports ints 1 through 5 (default 1)")
     parser.add_argument("--log-adversarial-examples", default=False, action="store_true", help="Log adversarial examples (default False)")
     parser.add_argument("--weights-path", type=str, default=None, help="Path to weights file")
+    parser.add_argument("--save-path", type=str, default=None, help="Path to save weights to")
 
     parser.add_argument("--neg-replace-layers", type=int, nargs="+", default=None, help="layer indices at which the layer is placed with the custom layer (NOTE: happens after removal and insertion)")
     parser.add_argument("--newtest", action="store_true", default=False, help="add in layers into features")
@@ -195,3 +197,6 @@ if __name__ == "__main__":
     # train
     trainer = Trainer(gpus=args.num_gpus, logger=wandb_logger, max_epochs=args.epochs)
     trainer.fit(model)
+
+    if save_path != None:
+        torch.save(model.state_dict(), save_path)
