@@ -1,3 +1,4 @@
+import torch
 import argparse
 from datetime import datetime
 from pytorch_lightning.loggers import WandbLogger
